@@ -7,4 +7,5 @@ o Communication can occur in delimiter-terminated mode
 
 Engineering tasks
 =================
-* Server publishes raw packages
+* Server triggers client raw packages event when first time data arrives since last read
+o One server client shall get new ClientReceivedRaw events although another's buffer isn't read
