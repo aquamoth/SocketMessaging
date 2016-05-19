@@ -2,10 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Net.Sockets;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace SocketMessaging.Server
 {
@@ -13,7 +10,7 @@ namespace SocketMessaging.Server
     {
 		public TcpServer()
 		{
-			_clients = new List<Connection>();
+			_connections = new List<Connection>();
 		}
 
 		public void Start(int port)
@@ -42,26 +39,20 @@ namespace SocketMessaging.Server
 
 		public IPEndPoint LocalEndpoint { get { return _listener.LocalEndpoint as IPEndPoint; } }
 
-		public IEnumerable<Connection> Clients { get { return _clients.AsEnumerable(); } }
+		public IEnumerable<Connection> Connections { get { return _connections.AsEnumerable(); } }
 
 		#region Public events
 
-		public event EventHandler<ConnectionEventArgs> ClientConnected;
-		protected virtual void OnClientConnected(ConnectionEventArgs e)
+		public event EventHandler<ConnectionEventArgs> Connected;
+		protected virtual void OnConnected(ConnectionEventArgs e)
 		{
-			ClientConnected?.Invoke(this, e);
+			Connected?.Invoke(this, e);
 		}
 
-		public event EventHandler<ConnectionEventArgs> ClientDisconnected;
-		protected virtual void OnClientDisconnected(ConnectionEventArgs e)
+		public event EventHandler<ConnectionEventArgs> Disconnected;
+		protected virtual void OnDisconnected(ConnectionEventArgs e)
 		{
-			ClientDisconnected?.Invoke(this, e);
-		}
-
-		public event EventHandler<ConnectionEventArgs> ClientReceivedRaw;
-		protected virtual void OnClientReceivedRaw(ConnectionEventArgs e)
-		{
-			ClientReceivedRaw?.Invoke(this, e);
+			Disconnected?.Invoke(this, e);
 		}
 
 		#endregion
@@ -92,23 +83,23 @@ namespace SocketMessaging.Server
 		{
 			while (true)
 			{
-				acceptAllPendingClients();
+				acceptPendingConnections();
 
-				for (var index = _clients.Count - 1; index >= 0; index--)
+				for (var index = _connections.Count - 1; index >= 0; index--)
 				{
-					//DebugInfo("Polling client {0}...", index);
-					var client = _clients[index];
-					if (client.Available > 0)
+					//DebugInfo("Polling connection {0}...", index);
+					var connection = _connections[index];
+					if (connection.Available > 0)
 					{
-						DebugInfo("Client {0} sent {1} bytes", index, client.Available);
-						var buffer = new byte[client.Available];
-						client.Receive(buffer);
+						DebugInfo("Connection {0} sent {1} bytes", connection.Id, connection.Available);
+						var buffer = new byte[connection.Available];
+						connection.Receive(buffer);
 					}
-					else if (!isConnected(client))
+					else if (!isConnected(connection))
 					{
-						DebugInfo("Client {0} disconnected", index);
-						_clients.Remove(client);
-						OnClientDisconnected(new ConnectionEventArgs(client));
+						DebugInfo("Connection {0} disconnected", connection.Id);
+						_connections.Remove(connection);
+						OnDisconnected(new ConnectionEventArgs(connection));
 					}
 				}
 
@@ -121,15 +112,15 @@ namespace SocketMessaging.Server
 			return connection.IsConnected;
 		}
 
-		private void acceptAllPendingClients()
+		private void acceptPendingConnections()
 		{
 			while (_listener.Pending())
 			{
-				var client = _listener.AcceptTcpClient();
-				var connection = new Connection(0, client);
-				_clients.Add(connection);
-				OnClientConnected(new ConnectionEventArgs(connection));
-				DebugInfo("Client {0} connected.", connection.Id);
+				var socket = _listener.AcceptSocket();
+				var connection = new Connection(0, socket);
+				_connections.Add(connection);
+				OnConnected(new ConnectionEventArgs(connection));
+				DebugInfo("Connection {0} connected.", connection.Id);
 			}
 		}
 
@@ -154,7 +145,7 @@ namespace SocketMessaging.Server
 
 		TcpListenerEx _listener = null;
 		internal Thread _pollThread = null;
-		readonly List<Connection> _clients;
+		readonly List<Connection> _connections;
 
 		const int POLLTHREAD_SLEEP = 20;
 	}

@@ -11,10 +11,11 @@ namespace SocketMessaging.Server
 	{
 		public int Id { get; private set; }
 
-		public int Available { get { return _client.Available; } }
+		public int Available { get { return _socket.Available; } }
+
 		public bool IsConnected { get
 			{
-				if (!_client.Client.Connected)
+				if (!_socket.Connected)
 					return false;
 
 				try
@@ -26,11 +27,11 @@ namespace SocketMessaging.Server
 					 * -or- true if the connection has been closed, reset, or terminated; 
 					 * otherwise, returns false
 					 */
-					if (!_client.Client.Poll(0, SelectMode.SelectRead))
+					if (!_socket.Poll(0, SelectMode.SelectRead))
 						return true;
 
 					byte[] buff = new byte[1];
-					var clientSentData = _client.Client.Receive(buff, SocketFlags.Peek) != 0;
+					var clientSentData = _socket.Receive(buff, SocketFlags.Peek) != 0;
 					return clientSentData; //False here though Poll() succeeded means we had a disconnect!
 				}
 				catch (SocketException ex)
@@ -43,19 +44,31 @@ namespace SocketMessaging.Server
 
 		public void Receive(byte[] buffer)
 		{
-			_client.Client.Receive(buffer);
+			_socket.Receive(buffer);
 		}
 
 		public int Receive(byte[] buffer, int offset, int size, SocketFlags socketFlags)
 		{
-			return _client.Client.Receive(buffer, offset, size, socketFlags);
+			return _socket.Receive(buffer, offset, size, socketFlags);
 		}
 
 
-		internal Connection(int id, System.Net.Sockets.TcpClient client)
+
+
+		#region Public events
+
+		public event EventHandler<ConnectionEventArgs> ReceivedRaw;
+		protected virtual void OnReceivedRaw(ConnectionEventArgs e)
+		{
+			ReceivedRaw?.Invoke(this, e);
+		}
+
+		#endregion
+
+		internal Connection(int id, Socket socket)
 		{
 			Id = id;
-			_client = client;
+			_socket = socket;
 		}
 
 		#region Debug logging
@@ -74,6 +87,6 @@ namespace SocketMessaging.Server
 
 		#endregion Debug logging
 
-		readonly System.Net.Sockets.TcpClient _client;
+		readonly Socket _socket;
 	}
 }

@@ -57,10 +57,10 @@ namespace SocketMessaging.Tests
 		public void Server_announces_connections_and_disconnections()
 		{
 			Connection connectedClient = null;
-			server.ClientConnected += (sender, e) => { connectedClient = e.Client; };
+			server.Connected += (sender, e) => { connectedClient = e.Client; };
 
 			Connection disconnectedClient = null;
-			server.ClientDisconnected += (sender, e) => { disconnectedClient = e.Client; };
+			server.Disconnected += (sender, e) => { disconnectedClient = e.Client; };
 
 			Assert.IsNull(connectedClient, "Server should not publish connected client before connection.");
 			client.Connect(serverAddress, SERVER_PORT);
@@ -78,9 +78,9 @@ namespace SocketMessaging.Tests
 		{
 			client.Connect(serverAddress, SERVER_PORT);
 
-			while (!server.Clients.Any())
+			while (!server.Connections.Any())
 				System.Threading.Thread.Sleep(10);
-			var serverClient = server.Clients.Single();
+			var serverClient = server.Connections.Single();
 
 			var sendString1 = Guid.NewGuid().ToString();
 			var sendString2 = Guid.NewGuid().ToString();

@@ -60,25 +60,25 @@ namespace SocketMessaging.Tests
 			const int SLEEP_TIME = 25;
 			var serverAddress = new IPAddress(new byte[] { 127, 0, 0, 1 });
 
-			Assert.AreEqual(0, server.Clients.Count(), "No clients before first connection");
+			Assert.AreEqual(0, server.Connections.Count(), "No clients before first connection");
 
 			var client1 = new TcpClient();
 			client1.Connect(serverAddress, SERVER_PORT);
 			System.Threading.Thread.Sleep(SLEEP_TIME);
-			Assert.AreEqual(1, server.Clients.Count(), "One client connected");
+			Assert.AreEqual(1, server.Connections.Count(), "One client connected");
 
 			var client2 = new TcpClient();
 			client2.Connect(serverAddress, SERVER_PORT);
 			System.Threading.Thread.Sleep(SLEEP_TIME);
-			Assert.AreEqual(2, server.Clients.Count(), "Two clients connected");
+			Assert.AreEqual(2, server.Connections.Count(), "Two clients connected");
 
 			client1.Disconnect();
 			System.Threading.Thread.Sleep(SLEEP_TIME);
-			Assert.AreEqual(1, server.Clients.Count(), "One client disconnected");
+			Assert.AreEqual(1, server.Connections.Count(), "One client disconnected");
 
 			client2.Disconnect();
 			System.Threading.Thread.Sleep(SLEEP_TIME);
-			Assert.AreEqual(0, server.Clients.Count(), "All clients disconnected");
+			Assert.AreEqual(0, server.Connections.Count(), "All clients disconnected");
 		}
 	}
 }
