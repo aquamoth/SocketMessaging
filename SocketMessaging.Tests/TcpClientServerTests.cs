@@ -6,6 +6,7 @@ using System.Net;
 using System.Text;
 using System.Diagnostics;
 using SocketMessaging.Server;
+using System.Collections.Generic;
 
 namespace SocketMessaging.Tests
 {
@@ -153,6 +154,33 @@ namespace SocketMessaging.Tests
 			waitFor(() => receiveEvents != 1);
 			Assert.AreEqual(2, receiveEvents, "Connection should trigger new received raw event.");
 		}
+
+		[TestMethod]
+		public void Can_read_raw_stream_from_connection()
+		{
+			Connection serverConnection = null;
+			var connectionBuffer = new List<byte>();
+
+			server.Connected += (s, e) => {
+				serverConnection = e.Connection;
+				e.Connection.ReceivedRaw += (s2, e2) =>
+				{
+					var receiveBuffer = new byte[e.Connection.Available];
+					e.Connection.Receive(receiveBuffer);
+					connectionBuffer.AddRange(receiveBuffer);
+				};
+			};
+			client.Connect(serverAddress, SERVER_PORT);
+
+			var buffer = new byte[500000];
+			new Random().NextBytes(buffer);
+			client.Send(buffer);
+			waitFor(() => connectionBuffer.Count >= buffer.Length);
+
+			CollectionAssert.AreEqual(buffer, connectionBuffer, "Connection should receive the same data the client sent.");
+		}
+
+
 
 		private static void waitFor(Func<bool> func, int timeout = 1000)
 		{
