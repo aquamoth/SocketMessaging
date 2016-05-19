@@ -29,5 +29,10 @@ namespace SocketMessaging
 			_client.Close();
 			_client = null;
 		}
+
+		internal void Send(byte[] buffer)
+		{
+			_client.Client.Send(buffer);
+		}
 	}
 }

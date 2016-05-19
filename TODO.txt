@@ -1,0 +1,11 @@
+User stories
+============
+* Clients can send raw messages to server
+o Clients can reveive raw messages from server
+o Communication can occur in length-prefixed mode
+o Communication can occur in delimiter-terminated mode 
+
+Engineering tasks
+=================
+* Server publishes disconnections
+* Server publishes raw packages

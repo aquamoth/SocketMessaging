@@ -44,6 +44,16 @@ namespace SocketMessaging
 
 		public IEnumerable<System.Net.Sockets.TcpClient> Clients { get { return _clients.AsEnumerable(); } }
 
+		#region Public events
+
+		public event EventHandler<ClientConnectedEventArgs> ClientConnected;
+		protected virtual void OnClientConnected(ClientConnectedEventArgs e)
+		{
+			ClientConnected?.Invoke(this, e);
+		}
+
+		#endregion
+
 		#region Private methods
 
 		private void startPollingThread()
@@ -125,7 +135,9 @@ namespace SocketMessaging
 		{
 			while (_listener.Pending())
 			{
-				_clients.Add(_listener.AcceptTcpClient());
+				var client = _listener.AcceptTcpClient();
+				_clients.Add(client);
+				OnClientConnected(new ClientConnectedEventArgs(client));
 				DebugInfo("Client {0} connected.", _clients.Count);
 			}
 		}
