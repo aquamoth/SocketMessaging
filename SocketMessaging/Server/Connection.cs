@@ -13,7 +13,9 @@ namespace SocketMessaging.Server
 
 		public int Available { get { return _socket.Available; } }
 
-		public bool IsConnected { get
+		public bool IsConnected
+		{
+			get
 			{
 				if (!_socket.Connected)
 					return false;
@@ -36,7 +38,7 @@ namespace SocketMessaging.Server
 				}
 				catch (SocketException ex)
 				{
-					DebugInfo(ex.ToString());
+					DebugInfo("#{0}: {1}", Id, ex);
 					return false;
 				}
 			}
@@ -60,7 +62,7 @@ namespace SocketMessaging.Server
 			if (!_triggeredReceiveEventSinceRead)
 			{
 				_triggeredReceiveEventSinceRead = true;
-				DebugInfo("Connection {0} received {1} bytes", this.Id, this.Available);
+				DebugInfo("#{0}: Connection received {1} bytes", this.Id, this.Available);
 				ReceivedRaw?.Invoke(this, e);
 			}
 		}
@@ -77,15 +79,15 @@ namespace SocketMessaging.Server
 
 		internal void Poll()
 		{
-			//DebugInfo("Polling connection {0}...", index);
-			if (this.Available > 0)
+			DebugInfo("#{0} Polling connection...", Id);
+			if (!this.IsConnected)
+			{
+				DebugInfo("#{0} Connection disconnected", this.Id);
+				OnDisconnected(EventArgs.Empty);
+			}
+			else if (this.Available > 0)
 			{
 				OnReceivedRaw(EventArgs.Empty);
-			}
-			else if (!this.IsConnected)
-			{
-				DebugInfo("Connection {0} disconnected", this.Id);
-				OnDisconnected(EventArgs.Empty);
 			}
 		}
 
@@ -126,7 +128,7 @@ namespace SocketMessaging.Server
 
 		#endregion Debug logging
 
-		readonly Socket _socket;
+		readonly protected Socket _socket;
 		bool _triggeredReceiveEventSinceRead = false;
 	}
 }

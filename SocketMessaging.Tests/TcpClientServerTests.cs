@@ -16,21 +16,19 @@ namespace SocketMessaging.Tests
 		const int SERVER_PORT = 7783;
 		readonly IPAddress serverAddress;
 		readonly Server.TcpServer server;
-		readonly TcpClient client;
+		TcpClient client = null;
 
 		public TcpClientServerTests()
 		{
 			server = new Server.TcpServer();
 			server.Start(SERVER_PORT);
 			serverAddress = new IPAddress(new byte[] { 127, 0, 0, 1 });
-
-			client = new TcpClient();
 		}
 
 		public void Dispose()
 		{
-			if (client.IsConnected)
-				client.Disconnect();
+			if (client != null && client.IsConnected)
+				client.Close();
 
 			if (server.IsStarted)
 				server.Stop();
@@ -39,10 +37,9 @@ namespace SocketMessaging.Tests
 		[TestMethod]
 		public void Can_connect_and_disconnect_to_running_server()
 		{
-			Assert.IsFalse(client.IsConnected, "IsConnected should be false before connection");
-			client.Connect(serverAddress, SERVER_PORT);
+			connectClient();
 			Assert.IsTrue(client.IsConnected, "IsConnected should be true after connection.");
-			client.Disconnect();
+			client.Close();
 			Assert.IsFalse(client.IsConnected, "IsConnected should be false after disconnection.");
 		}
 
@@ -51,7 +48,7 @@ namespace SocketMessaging.Tests
 		public void Does_not_connect_to_closed_server()
 		{
 			server.Stop();
-			client.Connect(serverAddress, SERVER_PORT);
+			connectClient();
 		}
 
 		[TestMethod]
@@ -64,7 +61,7 @@ namespace SocketMessaging.Tests
 			};
 
 			Assert.IsNull(connectedClient, "Server should not publish connected client before connection.");
-			client.Connect(serverAddress, SERVER_PORT);
+			connectClient();
 			waitFor(() => connectedClient != null);
 			Assert.IsNotNull(connectedClient, "Server should publish connected client after connection.");
 		}
@@ -72,24 +69,27 @@ namespace SocketMessaging.Tests
 		[TestMethod]
 		public void Connection_triggers_event_on_disconnection()
 		{
-			bool disconnectionEventTriggered = false;
+			var serverDisconnectedTriggered = false;
+			var clientDisconnectedTriggered = false;
 
 			server.Connected += (s1, e1) => {
-				e1.Connection.Disconnected += (s2, e2) => disconnectionEventTriggered = true;
+				e1.Connection.Disconnected += (s2, e2) => serverDisconnectedTriggered = true;
 			};
 
-			client.Connect(serverAddress, SERVER_PORT);
+			connectClient();
+			client.Disconnected += (s2, e2) => clientDisconnectedTriggered = true;
 
-			Assert.IsFalse(disconnectionEventTriggered, "Connection should not trigger disconnected event before client disconnects.");
-			client.Disconnect();
-			waitFor(() => disconnectionEventTriggered);
-			Assert.IsTrue(disconnectionEventTriggered, "Connection should trigger disconnected event when client disconnects.");
+			Assert.IsFalse(serverDisconnectedTriggered, "Connection should not trigger disconnected event before client disconnects.");
+			client.Close();
+			waitFor(() => serverDisconnectedTriggered && clientDisconnectedTriggered);
+			Assert.IsTrue(serverDisconnectedTriggered, "Server Connection should trigger disconnected event when client disconnects.");
+			Assert.IsTrue(clientDisconnectedTriggered, "Client should trigger disconnected event when client disconnects.");
 		}
 
 		[TestMethod]
 		public void Can_send_packet_to_server()
 		{
-			client.Connect(serverAddress, SERVER_PORT);
+			connectClient();
 
 			while (!server.Connections.Any())
 				System.Threading.Thread.Sleep(10);
@@ -162,7 +162,7 @@ namespace SocketMessaging.Tests
 				serverConnection = e.Connection;
 				e.Connection.ReceivedRaw += (s2, e2) => receiveEvents++;
 			};
-			client.Connect(serverAddress, SERVER_PORT);
+			connectClient();
 
 			Assert.AreEqual(0, receiveEvents, "Connection should not trigger receive raw event before client sends something.");
 
@@ -199,7 +199,7 @@ namespace SocketMessaging.Tests
 					connectionBuffer.AddRange(receiveBuffer);
 				};
 			};
-			client.Connect(serverAddress, SERVER_PORT);
+			connectClient();
 
 			var buffer = new byte[500000];
 			new Random().NextBytes(buffer);
@@ -210,6 +210,12 @@ namespace SocketMessaging.Tests
 		}
 
 
+
+
+		private void connectClient()
+		{
+			client = TcpClient.Connect(serverAddress, SERVER_PORT);
+		}
 
 		private static void waitFor(Func<bool> func, int timeout = 1000)
 		{

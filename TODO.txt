@@ -8,9 +8,13 @@ o Client and server can communicate by messages instead of packets
 
 Engineering tasks
 =================
-o Connection triggers disconnect event when it closes the connection
 o TcpClient stops Poll() when Connection disconnects
 o TcpServer stops Poll() when it disconnects the Connection
 o Server can Send buffer
 o Client triggers event when first data arrives since last read
 o Client can read raw buffer
+
+
+Known Problems
+==============
+o Connection.Poll() throws exception if socket closes just before checking if this.Available > 0.
