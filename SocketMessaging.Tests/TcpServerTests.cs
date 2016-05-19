@@ -9,12 +9,12 @@ namespace SocketMessaging.Tests
 	public class TcpServerTests : IDisposable
 	{
 		const int SERVER_PORT = 7732;
-		readonly TcpServer server;
+		readonly Server.TcpServer server;
 
 		public TcpServerTests()
 		{
 			Assert.IsFalse(Helpers.IsTcpPortListening(SERVER_PORT), "Port should be closed at start of test.");
-			server = new TcpServer();
+			server = new Server.TcpServer();
 			server.Start(SERVER_PORT);
 		}
 

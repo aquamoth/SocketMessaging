@@ -13,12 +13,12 @@ namespace SocketMessaging.Tests
 	{
 		const int SERVER_PORT = 7783;
 		readonly IPAddress serverAddress;
-		readonly TcpServer server;
+		readonly Server.TcpServer server;
 		readonly TcpClient client;
 
 		public TcpClientServerTests()
 		{
-			server = new TcpServer();
+			server = new Server.TcpServer();
 			server.Start(SERVER_PORT);
 			serverAddress = new IPAddress(new byte[] { 127, 0, 0, 1 });
 

@@ -4,13 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SocketMessaging
+namespace SocketMessaging.Server
 {
-	public class ClientConnectedEventArgs : EventArgs
+	public class ClientEventArgs : EventArgs
 	{
 		public System.Net.Sockets.TcpClient Client { get; private set; }
 
-		public ClientConnectedEventArgs(System.Net.Sockets.TcpClient client)
+		public ClientEventArgs(System.Net.Sockets.TcpClient client)
 		{
 			this.Client = client;
 		}

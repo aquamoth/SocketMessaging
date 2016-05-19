@@ -6,7 +6,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SocketMessaging
+namespace SocketMessaging.Server
 {
 	/// <summary>
 	/// Wrapper around TcpListener that exposes the Active property

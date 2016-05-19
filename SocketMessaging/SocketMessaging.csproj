@@ -40,10 +40,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ClientConnectedEventArgs.cs" />
+    <Compile Include="Server\ClientEventArgs.cs" />
     <Compile Include="TcpClient.cs" />
-    <Compile Include="TcpListenerEx.cs" />
-    <Compile Include="TcpServer.cs" />
+    <Compile Include="Server\TcpListenerEx.cs" />
+    <Compile Include="Server\TcpServer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

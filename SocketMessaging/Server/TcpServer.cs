@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SocketMessaging
+namespace SocketMessaging.Server
 {
     public class TcpServer
     {
@@ -46,18 +46,18 @@ namespace SocketMessaging
 
 		#region Public events
 
-		public event EventHandler<ClientConnectedEventArgs> ClientConnected;
-		protected virtual void OnClientConnected(ClientConnectedEventArgs e)
+		public event EventHandler<ClientEventArgs> ClientConnected;
+		protected virtual void OnClientConnected(ClientEventArgs e)
 		{
 			ClientConnected?.Invoke(this, e);
 		}
 
-		public event EventHandler<ClientConnectedEventArgs> ClientDisconnected;
-		protected virtual void OnClientDisconnected(ClientConnectedEventArgs e)
+		public event EventHandler<ClientEventArgs> ClientDisconnected;
+		protected virtual void OnClientDisconnected(ClientEventArgs e)
 		{
 			ClientDisconnected?.Invoke(this, e);
 		}
-		
+
 		#endregion
 
 		#region Private methods
@@ -102,7 +102,7 @@ namespace SocketMessaging
 					{
 						DebugInfo("Client {0} disconnected", index);
 						_clients.Remove(client);
-						OnClientDisconnected(new ClientConnectedEventArgs(client));
+						OnClientDisconnected(new ClientEventArgs(client));
 					}
 				}
 
@@ -144,7 +144,7 @@ namespace SocketMessaging
 			{
 				var client = _listener.AcceptTcpClient();
 				_clients.Add(client);
-				OnClientConnected(new ClientConnectedEventArgs(client));
+				OnClientConnected(new ClientEventArgs(client));
 				DebugInfo("Client {0} connected.", _clients.Count);
 			}
 		}
