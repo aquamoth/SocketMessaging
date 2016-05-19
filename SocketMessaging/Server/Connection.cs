@@ -44,10 +44,15 @@ namespace SocketMessaging.Server
 
 		#region Public events
 
-		public event EventHandler<ConnectionEventArgs> ReceivedRaw;
-		protected virtual void OnReceivedRaw(ConnectionEventArgs e)
+		public event EventHandler ReceivedRaw;
+		protected virtual void OnReceivedRaw(EventArgs e)
 		{
-			ReceivedRaw?.Invoke(this, e);
+			if (!_triggeredReceiveEventSinceRead)
+			{
+				_triggeredReceiveEventSinceRead = true;
+				DebugInfo("Connection {0} received {1} bytes", this.Id, this.Available);
+				ReceivedRaw?.Invoke(this, e);
+			}
 		}
 
 		public event EventHandler Disconnected;
@@ -65,9 +70,7 @@ namespace SocketMessaging.Server
 			//DebugInfo("Polling connection {0}...", index);
 			if (this.Available > 0)
 			{
-				DebugInfo("Connection {0} sent {1} bytes", this.Id, this.Available);
-				var buffer = new byte[this.Available];
-				this.Receive(buffer);
+				OnReceivedRaw(EventArgs.Empty);
 			}
 			else if (!this.IsConnected)
 			{
@@ -76,13 +79,15 @@ namespace SocketMessaging.Server
 			}
 		}
 
-		internal void Receive(byte[] buffer)
+		internal int Receive(byte[] buffer)
 		{
-			_socket.Receive(buffer);
+			_triggeredReceiveEventSinceRead = false;
+			return _socket.Receive(buffer);
 		}
 
 		internal int Receive(byte[] buffer, int offset, int size, SocketFlags socketFlags)
 		{
+			_triggeredReceiveEventSinceRead = false;
 			return _socket.Receive(buffer, offset, size, socketFlags);
 		}
 
@@ -112,5 +117,6 @@ namespace SocketMessaging.Server
 		#endregion Debug logging
 
 		readonly Socket _socket;
+		bool _triggeredReceiveEventSinceRead = false;
 	}
 }

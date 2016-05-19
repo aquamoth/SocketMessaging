@@ -54,27 +54,35 @@ namespace SocketMessaging.Tests
 		}
 
 		[TestMethod]
-		public void Server_announces_connections_and_disconnections()
+		public void Server_triggers_event_when_client_connects()
 		{
-			Connection connectedClient = null, disconnectedClient = null;
+			Connection connectedClient = null;
 
 			server.Connected += (s1, e1) => {
 				connectedClient = e1.Connection;
-				connectedClient.Disconnected += (s2, e2) =>
-				{
-					disconnectedClient = s2 as Connection;
-				};
 			};
 
 			Assert.IsNull(connectedClient, "Server should not publish connected client before connection.");
 			client.Connect(serverAddress, SERVER_PORT);
 			waitFor(() => connectedClient != null);
 			Assert.IsNotNull(connectedClient, "Server should publish connected client after connection.");
+		}
 
-			Assert.IsNull(disconnectedClient, "Server should not publish disconnected client before disconnection.");
+		[TestMethod]
+		public void Connection_triggers_event_on_disconnection()
+		{
+			bool disconnectionEventTriggered = false;
+
+			server.Connected += (s1, e1) => {
+				e1.Connection.Disconnected += (s2, e2) => disconnectionEventTriggered = true;
+			};
+
+			client.Connect(serverAddress, SERVER_PORT);
+
+			Assert.IsFalse(disconnectionEventTriggered, "Connection should not trigger disconnected event before client disconnects.");
 			client.Disconnect();
-			waitFor(() => disconnectedClient != null);
-			Assert.IsNotNull(disconnectedClient, "Server should publish disconnected client after disconnection.");
+			waitFor(() => disconnectionEventTriggered);
+			Assert.IsTrue(disconnectionEventTriggered, "Connection should trigger disconnected event when client disconnects.");
 		}
 
 		[TestMethod]
@@ -112,38 +120,39 @@ namespace SocketMessaging.Tests
 			var receivedString = Encoding.UTF8.GetString(buffer, 0, actualLength);
 			Assert.AreEqual(expectedString, receivedString);
 		}
-		
-		//[TestMethod]
-		//public void Server_publishes_raw_packages()
-		//{
-		//	System.Net.Sockets.TcpClient receivingClient = null;
-		//	server.ClientReceivedRaw += (sender, e) => { receivingClient = e.Client; };
 
-		//	client.Connect(serverAddress, SERVER_PORT);
+		[TestMethod]
+		public void Connection_triggers_receivedRaw_events()
+		{
+			Connection serverConnection = null;
+			int receiveEvents = 0;
+			var buffer = new byte[1];
 
-		//	var buffer = new byte[1024];
-		//	new Random().NextBytes(buffer);
-		//	client.Send(buffer);
-		//	waitFor(() => receivingClient != null);
-		//	Assert.IsNotNull(receivingClient, "Server should publish client received raw data since last read");
+			server.Connected += (s, e) => {
+				serverConnection = e.Connection;
+				e.Connection.ReceivedRaw += (s2, e2) => receiveEvents++;
+			};
+			client.Connect(serverAddress, SERVER_PORT);
 
-		//	var firstReceiveClient = receivingClient;
-		//	receivingClient = null;
-		//	var buffer2 = new byte[1024];
-		//	new Random().NextBytes(buffer2);
-		//	client.Send(buffer2);
-		//	waitFor(() => receivingClient != null, 100);
-		//	Assert.IsNull(receivingClient, "Server should not publish client received raw data again until previous data was read");
+			Assert.AreEqual(0, receiveEvents, "Connection should not trigger receive raw event before client sends something.");
 
-		//	var receiveBuffer = new byte[65536];
-		//	firstReceiveClient.Client.Receive(receiveBuffer);
+			client.Send(buffer);
+			waitFor(() => receiveEvents != 0);
+			Assert.AreEqual(1, receiveEvents, "Connection should trigger received raw event after first send.");
 
-		//	var buffer3 = new byte[1024];
-		//	new Random().NextBytes(buffer3);
-		//	client.Send(buffer3);
-		//	waitFor(() => receivingClient != null);
-		//	Assert.IsNotNull(receivingClient, "Server should publish client received raw data since last read");
-		//}
+			client.Send(buffer);
+			waitFor(() => receiveEvents != 1, 100);
+			Assert.AreEqual(1, receiveEvents, "Connection should not trigger multiple received raw events between reads.");
+
+			var receiveBuffer = new byte[100];
+			serverConnection.Receive(receiveBuffer);
+			waitFor(() => receiveEvents != 1, 100);
+			Assert.AreEqual(1, receiveEvents, "Connection should not trigger received raw events just because buffer was read.");
+
+			client.Send(buffer);
+			waitFor(() => receiveEvents != 1);
+			Assert.AreEqual(2, receiveEvents, "Connection should trigger new received raw event.");
+		}
 
 		private static void waitFor(Func<bool> func, int timeout = 1000)
 		{
