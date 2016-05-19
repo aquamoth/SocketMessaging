@@ -52,6 +52,21 @@ namespace SocketMessaging.Server
 			return _socket.Receive(buffer, offset, size, socketFlags);
 		}
 
+		internal void Poll()
+		{
+			//DebugInfo("Polling connection {0}...", index);
+			if (this.Available > 0)
+			{
+				DebugInfo("Connection {0} sent {1} bytes", this.Id, this.Available);
+				var buffer = new byte[this.Available];
+				this.Receive(buffer);
+			}
+			else if (!this.IsConnected)
+			{
+				DebugInfo("Connection {0} disconnected", this.Id);
+				OnDisconnected(EventArgs.Empty);
+			}
+		}
 
 
 
@@ -61,6 +76,12 @@ namespace SocketMessaging.Server
 		protected virtual void OnReceivedRaw(ConnectionEventArgs e)
 		{
 			ReceivedRaw?.Invoke(this, e);
+		}
+
+		public event EventHandler Disconnected;
+		protected virtual void OnDisconnected(EventArgs e)
+		{
+			Disconnected?.Invoke(this, e);
 		}
 
 		#endregion
@@ -83,6 +104,7 @@ namespace SocketMessaging.Server
 			}
 			System.Diagnostics.Debug.WriteLine(_debugInfoTime.ElapsedMilliseconds + ": " + format, args);
 		}
+
 		System.Diagnostics.Stopwatch _debugInfoTime;
 
 		#endregion Debug logging

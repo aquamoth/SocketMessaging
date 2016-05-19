@@ -56,11 +56,15 @@ namespace SocketMessaging.Tests
 		[TestMethod]
 		public void Server_announces_connections_and_disconnections()
 		{
-			Connection connectedClient = null;
-			server.Connected += (sender, e) => { connectedClient = e.Client; };
+			Connection connectedClient = null, disconnectedClient = null;
 
-			Connection disconnectedClient = null;
-			server.Disconnected += (sender, e) => { disconnectedClient = e.Client; };
+			server.Connected += (s1, e1) => {
+				connectedClient = e1.Client;
+				connectedClient.Disconnected += (s2, e2) =>
+				{
+					disconnectedClient = s2 as Connection;
+				};
+			};
 
 			Assert.IsNull(connectedClient, "Server should not publish connected client before connection.");
 			client.Connect(serverAddress, SERVER_PORT);

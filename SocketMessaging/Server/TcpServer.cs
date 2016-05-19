@@ -49,12 +49,6 @@ namespace SocketMessaging.Server
 			Connected?.Invoke(this, e);
 		}
 
-		public event EventHandler<ConnectionEventArgs> Disconnected;
-		protected virtual void OnDisconnected(ConnectionEventArgs e)
-		{
-			Disconnected?.Invoke(this, e);
-		}
-
 		#endregion
 
 		#region Private methods
@@ -85,23 +79,10 @@ namespace SocketMessaging.Server
 			{
 				acceptPendingConnections();
 
-				for (var index = _connections.Count - 1; index >= 0; index--)
-				{
-					//DebugInfo("Polling connection {0}...", index);
-					var connection = _connections[index];
-					if (connection.Available > 0)
-					{
-						DebugInfo("Connection {0} sent {1} bytes", connection.Id, connection.Available);
-						var buffer = new byte[connection.Available];
-						connection.Receive(buffer);
-					}
-					else if (!isConnected(connection))
-					{
-						DebugInfo("Connection {0} disconnected", connection.Id);
-						_connections.Remove(connection);
-						OnDisconnected(new ConnectionEventArgs(connection));
-					}
-				}
+				foreach (var connection in _connections)
+					connection.Poll();
+
+				_connections.RemoveAll(c => !c.IsConnected);
 
 				Thread.Sleep(POLLTHREAD_SLEEP);
 			}
