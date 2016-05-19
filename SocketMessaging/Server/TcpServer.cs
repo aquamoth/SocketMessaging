@@ -58,6 +58,12 @@ namespace SocketMessaging.Server
 			ClientDisconnected?.Invoke(this, e);
 		}
 
+		public event EventHandler<ClientEventArgs> ClientReceivedRaw;
+		protected virtual void OnClientReceivedRaw(ClientEventArgs e)
+		{
+			ClientReceivedRaw?.Invoke(this, e);
+		}
+
 		#endregion
 
 		#region Private methods
