@@ -28,10 +28,12 @@ namespace SocketMessaging.Tests
 		{
 			Assert.IsTrue(server.IsStarted);
 			Assert.IsTrue(Helpers.IsTcpPortListening(SERVER_PORT), "Port should be open when server has started.");
+			var serverPollThread = server._pollThread;
 
 			server.Stop();
 			Assert.IsFalse(server.IsStarted);
 			Assert.IsFalse(Helpers.IsTcpPortListening(SERVER_PORT), "Port should be closed when server has stopped.");
+			Assert.AreEqual(System.Threading.ThreadState.Aborted, serverPollThread.ThreadState, "Polling thread stops when server stops.");
 
 			server.Start(SERVER_PORT);
 			Assert.IsTrue(server.IsStarted);
@@ -55,23 +57,23 @@ namespace SocketMessaging.Tests
 		[TestMethod]
 		public void Enumerates_connected_clients()
 		{
-			const int SLEEP_TIME = 50;
+			const int SLEEP_TIME = 25;
+			var serverAddress = new IPAddress(new byte[] { 127, 0, 0, 1 });
+
 			Assert.AreEqual(0, server.Clients.Count(), "No clients before first connection");
 
-			var address = new IPAddress(new byte[] { 127, 0, 0, 1 });
-
 			var client1 = new TcpClient();
-			client1.Connect(address, SERVER_PORT);
+			client1.Connect(serverAddress, SERVER_PORT);
 			System.Threading.Thread.Sleep(SLEEP_TIME);
 			Assert.AreEqual(1, server.Clients.Count(), "One client connected");
 
 			var client2 = new TcpClient();
-			client2.Connect(address, SERVER_PORT);
+			client2.Connect(serverAddress, SERVER_PORT);
 			System.Threading.Thread.Sleep(SLEEP_TIME);
 			Assert.AreEqual(2, server.Clients.Count(), "Two clients connected");
 
 			client1.Disconnect();
-			System.Threading.Thread.Sleep(SLEEP_TIME*10);
+			System.Threading.Thread.Sleep(SLEEP_TIME);
 			Assert.AreEqual(1, server.Clients.Count(), "One client disconnected");
 
 			client2.Disconnect();

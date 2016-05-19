@@ -42,13 +42,7 @@ namespace SocketMessaging
 
 		public IPEndPoint LocalEndpoint { get { return _listener.LocalEndpoint as IPEndPoint; } }
 
-		public IEnumerable<System.Net.Sockets.TcpClient> Clients
-		{
-			get
-			{
-				return _clients.AsEnumerable();
-			}
-		}
+		public IEnumerable<System.Net.Sockets.TcpClient> Clients { get { return _clients.AsEnumerable(); } }
 
 		#region Private methods
 
@@ -156,7 +150,7 @@ namespace SocketMessaging
 
 
 		TcpListenerEx _listener = null;
-		Thread _pollThread = null;
+		internal Thread _pollThread = null;
 		readonly List<System.Net.Sockets.TcpClient> _clients;
 
 		const int POLLTHREAD_SLEEP = 20;
