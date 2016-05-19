@@ -56,24 +56,20 @@ namespace SocketMessaging.Tests
 		public void Server_announces_connections_and_disconnections()
 		{
 			System.Net.Sockets.TcpClient connectedClient = null;
-			System.Net.Sockets.TcpClient disconnectedClient = null;
-
 			server.ClientConnected += (sender, e) => { connectedClient = e.Client; };
-			client.Connect(serverAddress, SERVER_PORT);
 
-			var timeoutCounter = 100;
-			while (connectedClient == null && --timeoutCounter > 0)
-				System.Threading.Thread.Sleep(10);
-			Assert.IsNotNull(connectedClient, "Server should publish connected clients.");
-
+			System.Net.Sockets.TcpClient disconnectedClient = null;
 			server.ClientDisconnected += (sender, e) => { disconnectedClient = e.Client; };
+
+			Assert.IsNull(connectedClient, "Server should not publish connected client before connection.");
+			client.Connect(serverAddress, SERVER_PORT);
+			waitFor(() => connectedClient != null);
+			Assert.IsNotNull(connectedClient, "Server should publish connected client after connection.");
+
+			Assert.IsNull(disconnectedClient, "Server should not publish disconnected client before disconnection.");
 			client.Disconnect();
-
-			timeoutCounter = 100;
-			while (disconnectedClient == null && --timeoutCounter > 0)
-				System.Threading.Thread.Sleep(10);
-			Assert.IsNotNull(disconnectedClient, "Server should publish disconnected clients.");
-
+			waitFor(() => disconnectedClient != null);
+			Assert.IsNotNull(disconnectedClient, "Server should publish disconnected client after disconnection.");
 		}
 
 		[TestMethod]
@@ -112,7 +108,11 @@ namespace SocketMessaging.Tests
 			Assert.AreEqual(expectedString, receivedString);
 		}
 
-
-
+		private static void waitFor(Func<bool> func, int timeout = 1000)
+		{
+			int timeoutCounter = timeout / 10;
+			while (!func() && --timeoutCounter > 0)
+				System.Threading.Thread.Sleep(10);
+		}
 	}
 }
