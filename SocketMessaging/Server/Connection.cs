@@ -42,6 +42,16 @@ namespace SocketMessaging.Server
 			}
 		}
 
+		public void Send(byte[] buffer)
+		{
+			_socket.Send(buffer);
+		}
+
+		public void Close()
+		{
+			_socket.Close();
+		}
+
 		#region Public events
 
 		public event EventHandler ReceivedRaw;

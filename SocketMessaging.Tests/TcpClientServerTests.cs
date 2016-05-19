@@ -122,6 +122,35 @@ namespace SocketMessaging.Tests
 			Assert.AreEqual(expectedString, receivedString);
 		}
 
+		//[TestMethod]
+		//public void Server_can_send_packet_to_client()
+		//{
+		//	client.Connect(serverAddress, SERVER_PORT);
+		//	waitFor(() => server.Connections.Any());
+
+		//	var serverConnection = server.Connections.Single();
+
+		//	var r = new Random();
+		//	var buffer1 = new byte[100];
+		//	var buffer2 = new byte[100];
+		//	var expectedBuffer = buffer1.Concat(buffer2).ToArray();
+
+		//	serverConnection.Send(buffer1);
+		//	serverConnection.Send(buffer2);
+
+			
+		//	var buffer = new byte[expectedBuffer.Length + 1];
+		//	var actualLength = 0;
+		//	while (actualLength < expectedBuffer.Length)
+		//	{
+		//		waitFor(() => client.Available);
+		//		Assert.IsTrue(client.Available, "Client should receive packet:");
+		//		actualLength += client.Receive(buffer, actualLength, buffer.Length - actualLength, SocketFlags.None);
+		//	}
+
+		//	CollectionAssert.AreEqual(expectedBuffer, buffer.Take(actualLength).ToArray());
+		//}
+
 		[TestMethod]
 		public void Connection_triggers_receivedRaw_events()
 		{

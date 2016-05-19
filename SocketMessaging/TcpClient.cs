@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -9,7 +10,7 @@ namespace SocketMessaging
 {
 	public class TcpClient
 	{
-		System.Net.Sockets.TcpClient _client;
+		Server.Connection _client;
 
 		//public void Connect(IPEndPoint endpoint)
 		//{
@@ -18,11 +19,14 @@ namespace SocketMessaging
 		//}
 		public void Connect(IPAddress address, int port)
 		{
-			_client = new System.Net.Sockets.TcpClient();
-			_client.Connect(address, port);
+			var socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
+			socket.Connect(address, port);
+			_client = new Server.Connection(0, socket);
 		}
 
-		public bool IsConnected { get { return _client != null && _client.Connected; } }
+		public bool IsConnected { get { return _client != null && _client.IsConnected; } }
+
+		public bool Available { get { return _client != null && _client.Available > 0; } }
 
 		public void Disconnect()
 		{
@@ -30,9 +34,14 @@ namespace SocketMessaging
 			_client = null;
 		}
 
-		internal void Send(byte[] buffer)
+		public void Send(byte[] buffer)
 		{
-			_client.Client.Send(buffer);
+			_client.Send(buffer);
+		}
+
+		public int Receive(byte[] buffer, int actualLength, int v, SocketFlags none)
+		{
+			throw new NotImplementedException();
 		}
 	}
 }
