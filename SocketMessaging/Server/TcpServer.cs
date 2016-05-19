@@ -13,7 +13,7 @@ namespace SocketMessaging.Server
     {
 		public TcpServer()
 		{
-			_clients = new List<System.Net.Sockets.TcpClient>();
+			_clients = new List<Connection>();
 		}
 
 		public void Start(int port)
@@ -42,24 +42,24 @@ namespace SocketMessaging.Server
 
 		public IPEndPoint LocalEndpoint { get { return _listener.LocalEndpoint as IPEndPoint; } }
 
-		public IEnumerable<System.Net.Sockets.TcpClient> Clients { get { return _clients.AsEnumerable(); } }
+		public IEnumerable<Connection> Clients { get { return _clients.AsEnumerable(); } }
 
 		#region Public events
 
-		public event EventHandler<ClientEventArgs> ClientConnected;
-		protected virtual void OnClientConnected(ClientEventArgs e)
+		public event EventHandler<ConnectionEventArgs> ClientConnected;
+		protected virtual void OnClientConnected(ConnectionEventArgs e)
 		{
 			ClientConnected?.Invoke(this, e);
 		}
 
-		public event EventHandler<ClientEventArgs> ClientDisconnected;
-		protected virtual void OnClientDisconnected(ClientEventArgs e)
+		public event EventHandler<ConnectionEventArgs> ClientDisconnected;
+		protected virtual void OnClientDisconnected(ConnectionEventArgs e)
 		{
 			ClientDisconnected?.Invoke(this, e);
 		}
 
-		public event EventHandler<ClientEventArgs> ClientReceivedRaw;
-		protected virtual void OnClientReceivedRaw(ClientEventArgs e)
+		public event EventHandler<ConnectionEventArgs> ClientReceivedRaw;
+		protected virtual void OnClientReceivedRaw(ConnectionEventArgs e)
 		{
 			ClientReceivedRaw?.Invoke(this, e);
 		}
@@ -102,13 +102,13 @@ namespace SocketMessaging.Server
 					{
 						DebugInfo("Client {0} sent {1} bytes", index, client.Available);
 						var buffer = new byte[client.Available];
-						client.Client.Receive(buffer);
+						client.Receive(buffer);
 					}
 					else if (!isConnected(client))
 					{
 						DebugInfo("Client {0} disconnected", index);
 						_clients.Remove(client);
-						OnClientDisconnected(new ClientEventArgs(client));
+						OnClientDisconnected(new ConnectionEventArgs(client));
 					}
 				}
 
@@ -116,32 +116,9 @@ namespace SocketMessaging.Server
 			}
 		}
 
-		private bool isConnected(System.Net.Sockets.TcpClient client)
+		private bool isConnected(Connection connection)
 		{
-			if (!client.Client.Connected)
-				return false;
-
-			try
-			{
-				/* pear to the documentation on Poll:
-				 * When passing SelectMode.SelectRead as a parameter to the Poll method it will return 
-				 * -either- true if Socket.Listen(Int32) has been called and a connection is pending;
-				 * -or- true if data is available for reading; 
-				 * -or- true if the connection has been closed, reset, or terminated; 
-				 * otherwise, returns false
-				 */
-				if (!client.Client.Poll(0, SelectMode.SelectRead))
-					return true;
-
-				byte[] buff = new byte[1];
-				var clientSentData = client.Client.Receive(buff, SocketFlags.Peek) != 0;
-				return clientSentData; //False here though Poll() succeeded means we had a disconnect!
-			}
-			catch (SocketException ex)
-			{
-				DebugInfo(ex.ToString());
-				return false;
-			}
+			return connection.IsConnected;
 		}
 
 		private void acceptAllPendingClients()
@@ -149,9 +126,10 @@ namespace SocketMessaging.Server
 			while (_listener.Pending())
 			{
 				var client = _listener.AcceptTcpClient();
-				_clients.Add(client);
-				OnClientConnected(new ClientEventArgs(client));
-				DebugInfo("Client {0} connected.", _clients.Count);
+				var connection = new Connection(0, client);
+				_clients.Add(connection);
+				OnClientConnected(new ConnectionEventArgs(connection));
+				DebugInfo("Client {0} connected.", connection.Id);
 			}
 		}
 
@@ -176,7 +154,7 @@ namespace SocketMessaging.Server
 
 		TcpListenerEx _listener = null;
 		internal Thread _pollThread = null;
-		readonly List<System.Net.Sockets.TcpClient> _clients;
+		readonly List<Connection> _clients;
 
 		const int POLLTHREAD_SLEEP = 20;
 	}
