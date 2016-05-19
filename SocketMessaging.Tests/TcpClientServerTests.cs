@@ -53,18 +53,27 @@ namespace SocketMessaging.Tests
 		}
 
 		[TestMethod]
-		public void Server_announces_connected_clients()
+		public void Server_announces_connections_and_disconnections()
 		{
-			System.Net.Sockets.TcpClient announcedClient = null;
-			server.ClientConnected += (sender, e) => { announcedClient = e.Client; };
+			System.Net.Sockets.TcpClient connectedClient = null;
+			System.Net.Sockets.TcpClient disconnectedClient = null;
 
+			server.ClientConnected += (sender, e) => { connectedClient = e.Client; };
 			client.Connect(serverAddress, SERVER_PORT);
 
 			var timeoutCounter = 100;
-			while (announcedClient == null && --timeoutCounter > 0)
+			while (connectedClient == null && --timeoutCounter > 0)
 				System.Threading.Thread.Sleep(10);
+			Assert.IsNotNull(connectedClient, "Server should publish connected clients.");
 
-			Assert.IsNotNull(announcedClient, "Server should publish connected clients.");
+			server.ClientDisconnected += (sender, e) => { disconnectedClient = e.Client; };
+			client.Disconnect();
+
+			timeoutCounter = 100;
+			while (disconnectedClient == null && --timeoutCounter > 0)
+				System.Threading.Thread.Sleep(10);
+			Assert.IsNotNull(disconnectedClient, "Server should publish disconnected clients.");
+
 		}
 
 		[TestMethod]

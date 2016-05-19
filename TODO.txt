@@ -7,5 +7,4 @@ o Communication can occur in delimiter-terminated mode
 
 Engineering tasks
 =================
-* Server publishes disconnections
 * Server publishes raw packages

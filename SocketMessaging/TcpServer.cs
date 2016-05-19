@@ -52,6 +52,12 @@ namespace SocketMessaging
 			ClientConnected?.Invoke(this, e);
 		}
 
+		public event EventHandler<ClientConnectedEventArgs> ClientDisconnected;
+		protected virtual void OnClientDisconnected(ClientConnectedEventArgs e)
+		{
+			ClientDisconnected?.Invoke(this, e);
+		}
+		
 		#endregion
 
 		#region Private methods
@@ -95,7 +101,8 @@ namespace SocketMessaging
 					else if (!isConnected(client))
 					{
 						DebugInfo("Client {0} disconnected", index);
-						_clients.RemoveAt(index);
+						_clients.Remove(client);
+						OnClientDisconnected(new ClientConnectedEventArgs(client));
 					}
 				}
 
