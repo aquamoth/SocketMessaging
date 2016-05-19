@@ -66,15 +66,19 @@ namespace SocketMessaging.Tests
 			client1.Connect(serverAddress, SERVER_PORT);
 			System.Threading.Thread.Sleep(SLEEP_TIME);
 			Assert.AreEqual(1, server.Connections.Count(), "One client connected");
+			Assert.AreEqual(1, server.Connections.First().Id, "Connection Id");
 
 			var client2 = new TcpClient();
 			client2.Connect(serverAddress, SERVER_PORT);
 			System.Threading.Thread.Sleep(SLEEP_TIME);
 			Assert.AreEqual(2, server.Connections.Count(), "Two clients connected");
+			Assert.AreEqual(1, server.Connections.First().Id, "Connection Id");
+			Assert.AreEqual(2, server.Connections.Skip(1).First().Id, "Connection Id");
 
 			client1.Disconnect();
 			System.Threading.Thread.Sleep(SLEEP_TIME);
 			Assert.AreEqual(1, server.Connections.Count(), "One client disconnected");
+			Assert.AreEqual(2, server.Connections.First().Id, "Connection Id");
 
 			client2.Disconnect();
 			System.Threading.Thread.Sleep(SLEEP_TIME);

@@ -8,11 +8,11 @@ namespace SocketMessaging.Server
 {
 	public class ConnectionEventArgs : EventArgs
 	{
-		public Connection Client { get; private set; }
+		public Connection Connection { get; private set; }
 
 		public ConnectionEventArgs(Connection connection)
 		{
-			this.Client = connection;
+			this.Connection = connection;
 		}
 	}
 }

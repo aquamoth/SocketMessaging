@@ -59,7 +59,7 @@ namespace SocketMessaging.Tests
 			Connection connectedClient = null, disconnectedClient = null;
 
 			server.Connected += (s1, e1) => {
-				connectedClient = e1.Client;
+				connectedClient = e1.Connection;
 				connectedClient.Disconnected += (s2, e2) =>
 				{
 					disconnectedClient = s2 as Connection;
@@ -84,7 +84,7 @@ namespace SocketMessaging.Tests
 
 			while (!server.Connections.Any())
 				System.Threading.Thread.Sleep(10);
-			var serverClient = server.Connections.Single();
+			var serverConnection = server.Connections.Single();
 
 			var sendString1 = Guid.NewGuid().ToString();
 			var sendString2 = Guid.NewGuid().ToString();
@@ -98,9 +98,9 @@ namespace SocketMessaging.Tests
 			var actualLength = 0;
 			while (actualLength < expectedString.Length)
 			{
-				if (serverClient.Available > 0)
+				if (serverConnection.Available > 0)
 				{
-					actualLength += serverClient.Receive(buffer, actualLength, buffer.Length - actualLength, SocketFlags.None);
+					actualLength += serverConnection.Receive(buffer, actualLength, buffer.Length - actualLength, SocketFlags.None);
 				}
 
 				System.Threading.Thread.Sleep(10);

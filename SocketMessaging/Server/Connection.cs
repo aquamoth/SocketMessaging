@@ -42,15 +42,23 @@ namespace SocketMessaging.Server
 			}
 		}
 
-		public void Receive(byte[] buffer)
+		#region Public events
+
+		public event EventHandler<ConnectionEventArgs> ReceivedRaw;
+		protected virtual void OnReceivedRaw(ConnectionEventArgs e)
 		{
-			_socket.Receive(buffer);
+			ReceivedRaw?.Invoke(this, e);
 		}
 
-		public int Receive(byte[] buffer, int offset, int size, SocketFlags socketFlags)
+		public event EventHandler Disconnected;
+		protected virtual void OnDisconnected(EventArgs e)
 		{
-			return _socket.Receive(buffer, offset, size, socketFlags);
+			Disconnected?.Invoke(this, e);
 		}
+
+		#endregion
+		
+		#region Internal logic
 
 		internal void Poll()
 		{
@@ -68,23 +76,17 @@ namespace SocketMessaging.Server
 			}
 		}
 
-
-
-		#region Public events
-
-		public event EventHandler<ConnectionEventArgs> ReceivedRaw;
-		protected virtual void OnReceivedRaw(ConnectionEventArgs e)
+		internal void Receive(byte[] buffer)
 		{
-			ReceivedRaw?.Invoke(this, e);
+			_socket.Receive(buffer);
 		}
 
-		public event EventHandler Disconnected;
-		protected virtual void OnDisconnected(EventArgs e)
+		internal int Receive(byte[] buffer, int offset, int size, SocketFlags socketFlags)
 		{
-			Disconnected?.Invoke(this, e);
+			return _socket.Receive(buffer, offset, size, socketFlags);
 		}
 
-		#endregion
+		#endregion Internal logic
 
 		internal Connection(int id, Socket socket)
 		{

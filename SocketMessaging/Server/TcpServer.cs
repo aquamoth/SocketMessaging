@@ -10,7 +10,7 @@ namespace SocketMessaging.Server
     {
 		public TcpServer()
 		{
-			_connections = new List<Connection>();
+			_connections = new HashSet<Connection>();
 		}
 
 		public void Start(int port)
@@ -18,6 +18,7 @@ namespace SocketMessaging.Server
 			if (_listener != null)
 				throw new InvalidOperationException("Already started.");
 
+			_connectionsSinceStart = 0;
 			var address = new IPAddress(0);
 			_listener = new TcpListenerEx(address, port);
 			_listener.Start();
@@ -46,6 +47,7 @@ namespace SocketMessaging.Server
 		public event EventHandler<ConnectionEventArgs> Connected;
 		protected virtual void OnConnected(ConnectionEventArgs e)
 		{
+			DebugInfo("Connection {0} connected.", e.Connection.Id);
 			Connected?.Invoke(this, e);
 		}
 
@@ -82,7 +84,7 @@ namespace SocketMessaging.Server
 				foreach (var connection in _connections)
 					connection.Poll();
 
-				_connections.RemoveAll(c => !c.IsConnected);
+				_connections.RemoveWhere(c => !c.IsConnected);
 
 				Thread.Sleep(POLLTHREAD_SLEEP);
 			}
@@ -98,10 +100,9 @@ namespace SocketMessaging.Server
 			while (_listener.Pending())
 			{
 				var socket = _listener.AcceptSocket();
-				var connection = new Connection(0, socket);
+				var connection = new Connection(++_connectionsSinceStart, socket);
 				_connections.Add(connection);
 				OnConnected(new ConnectionEventArgs(connection));
-				DebugInfo("Connection {0} connected.", connection.Id);
 			}
 		}
 
@@ -126,8 +127,8 @@ namespace SocketMessaging.Server
 
 		TcpListenerEx _listener = null;
 		internal Thread _pollThread = null;
-		readonly List<Connection> _connections;
-
+		readonly HashSet<Connection> _connections;
+		int _connectionsSinceStart;
 		const int POLLTHREAD_SLEEP = 20;
 	}
 }
