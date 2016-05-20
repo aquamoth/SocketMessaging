@@ -14,7 +14,6 @@ namespace SocketMessaging.Tests
 	public class TcpClientServerTests : IDisposable
 	{
 		const int SERVER_PORT = 7783;
-		readonly IPAddress serverAddress;
 		readonly Server.TcpServer server;
 		TcpClient client = null;
 
@@ -22,7 +21,6 @@ namespace SocketMessaging.Tests
 		{
 			server = new Server.TcpServer();
 			server.Start(SERVER_PORT);
-			serverAddress = new IPAddress(new byte[] { 127, 0, 0, 1 });
 		}
 
 		public void Dispose()
@@ -35,6 +33,7 @@ namespace SocketMessaging.Tests
 		}
 
 		[TestMethod]
+		[TestCategory("TcpClient")]
 		public void Can_connect_and_disconnect_to_running_server()
 		{
 			connectClient();
@@ -44,6 +43,7 @@ namespace SocketMessaging.Tests
 		}
 
 		[TestMethod]
+		[TestCategory("TcpClient")]
 		[ExpectedException(typeof(SocketException))]
 		public void Does_not_connect_to_closed_server()
 		{
@@ -52,7 +52,8 @@ namespace SocketMessaging.Tests
 		}
 
 		[TestMethod]
-		public void Server_triggers_event_when_client_connects()
+		[TestCategory("TcpServer")]
+		public void Server_triggers_Connected()
 		{
 			Connection connectedClient = null;
 
@@ -67,7 +68,8 @@ namespace SocketMessaging.Tests
 		}
 
 		[TestMethod]
-		public void Connection_triggers_event_on_disconnection()
+		[TestCategory("Connection")]
+		public void Connection_triggers_Disconnected()
 		{
 			var serverDisconnectedTriggered = false;
 			var clientDisconnectedTriggered = false;
@@ -87,47 +89,41 @@ namespace SocketMessaging.Tests
 		}
 
 		[TestMethod]
-		public void Can_send_packet_to_server()
+		[TestCategory("Connection")]
+		public void Client_can_send_packet_to_server()
 		{
 			connectClient();
-
-			while (!server.Connections.Any())
-				System.Threading.Thread.Sleep(10);
+			waitFor(() => server.Connections.Any());
 			var serverConnection = server.Connections.Single();
 
-			var sendString1 = Guid.NewGuid().ToString();
-			var sendString2 = Guid.NewGuid().ToString();
-			var expectedString = sendString1 + sendString2;
+			var r = new Random();
+			var buffer1 = new byte[100];
+			r.NextBytes(buffer1);
+			var buffer2 = new byte[100];
+			r.NextBytes(buffer2);
+			var expectedBuffer = buffer1.Concat(buffer2).ToArray();
 
-			client.Send(Encoding.UTF8.GetBytes(sendString1));
-			client.Send(Encoding.UTF8.GetBytes(sendString2));
+			client.Send(buffer1);
+			client.Send(buffer2);
 
-			var timeoutCounter = 100;
-			var buffer = new byte[expectedString.Length + 100];
+			var buffer = new byte[expectedBuffer.Length + 1];
 			var actualLength = 0;
-			while (actualLength < expectedString.Length)
+			while (actualLength < expectedBuffer.Length)
 			{
-				if (serverConnection.Available > 0)
-				{
-					actualLength += serverConnection.Receive(buffer, actualLength, buffer.Length - actualLength, SocketFlags.None);
-				}
-
-				System.Threading.Thread.Sleep(10);
-				if (--timeoutCounter == 0)
-					throw new ApplicationException("Server did not receive message in time");
+				waitFor(() => serverConnection.Available > 0);
+				Assert.IsTrue(serverConnection.Available > 0, "Server should receive packet.");
+				actualLength += serverConnection.Receive(buffer, actualLength, buffer.Length - actualLength, SocketFlags.None);
 			}
 
-			Trace.TraceInformation("Comparing sent with received");
-			var receivedString = Encoding.UTF8.GetString(buffer, 0, actualLength);
-			Assert.AreEqual(expectedString, receivedString);
+			CollectionAssert.AreEqual(expectedBuffer, buffer.Take(actualLength).ToArray());
 		}
 
 		[TestMethod]
+		[TestCategory("Connection")]
 		public void Server_can_send_packet_to_client()
 		{
 			connectClient();
 			waitFor(() => server.Connections.Any());
-
 			var serverConnection = server.Connections.Single();
 
 			var r = new Random();
@@ -153,7 +149,8 @@ namespace SocketMessaging.Tests
 		}
 
 		[TestMethod]
-		public void Connection_triggers_receivedRaw_events()
+		[TestCategory("Connection")]
+		public void Connection_triggers_receivedRaw_event()
 		{
 			Connection serverConnection = null;
 			int receiveEvents = 0;
@@ -186,6 +183,7 @@ namespace SocketMessaging.Tests
 		}
 
 		[TestMethod]
+		[TestCategory("Connection")]
 		public void Can_read_raw_stream_from_connection()
 		{
 			Connection serverConnection = null;
@@ -215,6 +213,7 @@ namespace SocketMessaging.Tests
 
 		private void connectClient()
 		{
+			var serverAddress = new IPAddress(new byte[] { 127, 0, 0, 1 });
 			client = TcpClient.Connect(serverAddress, SERVER_PORT);
 		}
 
