@@ -11,13 +11,13 @@ using System.Collections.Generic;
 namespace SocketMessaging.Tests
 {
 	[TestClass]
-	public class TcpClientServerTests : IDisposable
+	public class ConnectionTests : IDisposable
 	{
 		const int SERVER_PORT = 7783;
 		readonly Server.TcpServer server;
 		TcpClient client = null;
 
-		public TcpClientServerTests()
+		public ConnectionTests()
 		{
 			server = new Server.TcpServer();
 			server.Start(SERVER_PORT);
@@ -32,43 +32,8 @@ namespace SocketMessaging.Tests
 				server.Stop();
 		}
 
-		[TestMethod]
-		[TestCategory("TcpClient")]
-		public void Can_connect_and_disconnect_to_running_server()
-		{
-			connectClient();
-			Assert.IsTrue(client.IsConnected, "IsConnected should be true after connection.");
-			var clientPollThread = client._pollThread;
-			client.Close();
-			Assert.IsFalse(client.IsConnected, "IsConnected should be false after disconnection.");
-			Helpers.WaitFor(() => clientPollThread.ThreadState == System.Threading.ThreadState.Aborted);
-			Assert.AreEqual(System.Threading.ThreadState.Aborted, clientPollThread.ThreadState, "Polling thread stops when client disconnects");
-		}
 
-		[TestMethod]
-		[TestCategory("TcpClient")]
-		[ExpectedException(typeof(SocketException))]
-		public void Does_not_connect_to_closed_server()
-		{
-			server.Stop();
-			connectClient();
-		}
 
-		[TestMethod]
-		[TestCategory("TcpServer")]
-		public void Server_triggers_Connected()
-		{
-			Connection connectedClient = null;
-
-			server.Connected += (s1, e1) => {
-				connectedClient = e1.Connection;
-			};
-
-			Assert.IsNull(connectedClient, "Server should not publish connected client before connection.");
-			connectClient();
-			Helpers.WaitFor(() => connectedClient != null);
-			Assert.IsNotNull(connectedClient, "Server should publish connected client after connection.");
-		}
 
 		[TestMethod]
 		[TestCategory("Connection")]
@@ -222,5 +187,6 @@ namespace SocketMessaging.Tests
 			var serverAddress = new IPAddress(new byte[] { 127, 0, 0, 1 });
 			client = TcpClient.Connect(serverAddress, SERVER_PORT);
 		}
+
 	}
 }

@@ -1,7 +1,12 @@
 ﻿using System;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Net.Sockets;
 using System.Net;
+using System.Text;
+using System.Diagnostics;
+using SocketMessaging.Server;
+using System.Collections.Generic;
 
 namespace SocketMessaging.Tests
 {
@@ -24,6 +29,7 @@ namespace SocketMessaging.Tests
 		}
 
 		[TestMethod]
+		[TestCategory("TcpServer")]
 		public void Starts_and_stops_multiple_times()
 		{
 			Assert.IsTrue(server.IsStarted);
@@ -41,6 +47,7 @@ namespace SocketMessaging.Tests
 		}
 
 		[TestMethod]
+		[TestCategory("TcpServer")]
 		[ExpectedException(typeof(InvalidOperationException))]
 		public void Should_not_start_when_started()
 		{
@@ -48,6 +55,7 @@ namespace SocketMessaging.Tests
 		}
 
 		[TestMethod]
+		[TestCategory("TcpServer")]
 		public void Exposes_local_endpoint()
 		{
 			var endpoint = server.LocalEndpoint as IPEndPoint;
@@ -55,6 +63,31 @@ namespace SocketMessaging.Tests
 		}
 
 		[TestMethod]
+		[TestCategory("TcpServer")]
+		public void Server_triggers_Connected()
+		{
+			Connection connectedClient = null;
+
+			server.Connected += (s1, e1) => {
+				connectedClient = e1.Connection;
+			};
+
+			Assert.IsNull(connectedClient, "Server should not publish connected client before connection.");
+			var serverAddress = new IPAddress(new byte[] { 127, 0, 0, 1 });
+			var client = TcpClient.Connect(serverAddress, SERVER_PORT);
+			try
+			{
+				Helpers.WaitFor(() => connectedClient != null);
+				Assert.IsNotNull(connectedClient, "Server should publish connected client after connection.");
+			}
+			finally
+			{
+				client.Close();
+			}
+		}
+
+		[TestMethod]
+		[TestCategory("TcpServer")]
 		public void Enumerates_connected_clients()
 		{
 			const int SLEEP_TIME = 25;
