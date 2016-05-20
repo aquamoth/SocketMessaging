@@ -26,7 +26,7 @@ namespace SocketMessaging
 		protected override void OnDisconnected(EventArgs e)
 		{
 			base.OnDisconnected(e);
-			stopPollingThread();
+			Task.Run(() => stopPollingThread()); //Without a task, the thread would stop itself instead of being aborted
 		}
 
 		#region Private methods
@@ -43,23 +43,34 @@ namespace SocketMessaging
 			};
 
 			_pollThread.Start();
-			System.Diagnostics.Trace.TraceInformation("#{0}: Polling thread started", Id);
 		}
 
 		private void stopPollingThread()
 		{
 			_pollThread.Abort();
 			_pollThread = null;
-			System.Diagnostics.Trace.TraceInformation("#{0}: Polling thread stopped", Id);
 		}
 
 		private void pollThread_run()
 		{
-			while (true)
+			try
 			{
-				//System.Diagnostics.Trace.TraceInformation("#{0}: Polling...", Id);
-				this.Poll();
-				Thread.Sleep(POLLTHREAD_SLEEP);
+
+				Helpers.DebugInfo("#{0}: Polling thread started", Id);
+				while (true)
+				{
+					Helpers.DebugInfo("#{0}: Polling...", Id);
+					this.Poll();
+					Thread.Sleep(POLLTHREAD_SLEEP);
+				}
+			}
+			catch (ThreadAbortException)
+			{
+				Helpers.DebugInfo("#{0}: Polling thread stopped.", Id);
+			}
+			catch (Exception ex)
+			{
+				System.Diagnostics.Trace.TraceError("Error in polling thread!\n{0}", ex.Message);
 			}
 		}
 

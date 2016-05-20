@@ -38,8 +38,11 @@ namespace SocketMessaging.Tests
 		{
 			connectClient();
 			Assert.IsTrue(client.IsConnected, "IsConnected should be true after connection.");
+			var clientPollThread = client._pollThread;
 			client.Close();
 			Assert.IsFalse(client.IsConnected, "IsConnected should be false after disconnection.");
+			waitFor(() => clientPollThread.ThreadState == System.Threading.ThreadState.Aborted);
+			Assert.AreEqual(System.Threading.ThreadState.Aborted, clientPollThread.ThreadState, "Polling thread stops when client disconnects");
 		}
 
 		[TestMethod]

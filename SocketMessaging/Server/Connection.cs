@@ -11,17 +11,17 @@ namespace SocketMessaging.Server
 	{
 		public int Id { get; private set; }
 
-		public int Available { get { return _socket.Available; } }
+		public int Available { get { return _socket == null ? 0 : _socket.Available; } }
 
 		public bool IsConnected
 		{
 			get
 			{
-				if (!_socket.Connected)
-					return false;
-
 				try
 				{
+					if (_socket == null || !_socket.Connected)
+						return false;
+
 					/* pear to the documentation on Poll:
 					 * When passing SelectMode.SelectRead as a parameter to the Poll method it will return 
 					 * -either- true if Socket.Listen(Int32) has been called and a connection is pending;
@@ -38,7 +38,7 @@ namespace SocketMessaging.Server
 				}
 				catch (SocketException ex)
 				{
-					DebugInfo("#{0}: {1}", Id, ex);
+					Helpers.DebugInfo("#{0}: {1}", Id, ex);
 					return false;
 				}
 			}
@@ -52,6 +52,7 @@ namespace SocketMessaging.Server
 		public void Close()
 		{
 			_socket.Close();
+			_socket = null;
 		}
 
 		#region Public events
@@ -62,7 +63,7 @@ namespace SocketMessaging.Server
 			if (!_triggeredReceiveEventSinceRead)
 			{
 				_triggeredReceiveEventSinceRead = true;
-				DebugInfo("#{0}: Connection received {1} bytes", this.Id, this.Available);
+				Helpers.DebugInfo("#{0}: Connection received {1} bytes", this.Id, this.Available);
 				ReceivedRaw?.Invoke(this, e);
 			}
 		}
@@ -79,10 +80,10 @@ namespace SocketMessaging.Server
 
 		internal void Poll()
 		{
-			DebugInfo("#{0} Polling connection...", Id);
+			Helpers.DebugInfo("#{0} Polling connection...", Id);
 			if (!this.IsConnected)
 			{
-				DebugInfo("#{0} Connection disconnected", this.Id);
+				Helpers.DebugInfo("#{0} Connection disconnected", this.Id);
 				OnDisconnected(EventArgs.Empty);
 			}
 			else if (this.Available > 0)
@@ -111,24 +112,7 @@ namespace SocketMessaging.Server
 			_socket = socket;
 		}
 
-		#region Debug logging
-
-		[System.Diagnostics.Conditional("DEBUG")]
-		void DebugInfo(string format, params object[] args)
-		{
-			if (_debugInfoTime == null)
-			{
-				_debugInfoTime = new System.Diagnostics.Stopwatch();
-				_debugInfoTime.Start();
-			}
-			System.Diagnostics.Debug.WriteLine(_debugInfoTime.ElapsedMilliseconds + ": " + format, args);
-		}
-
-		System.Diagnostics.Stopwatch _debugInfoTime;
-
-		#endregion Debug logging
-
-		readonly protected Socket _socket;
+		protected Socket _socket;
 		bool _triggeredReceiveEventSinceRead = false;
 	}
 }

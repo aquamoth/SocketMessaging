@@ -1,18 +1,14 @@
 User stories
 ============
-* Clients can receive raw messages from server
-o Client and server can communicate by messages instead of packets
-	o Can switch message mode on connections between raw, fixed-length, delimiter-bound and length-prefixed.
-	o Data read from raw stream is removed from the messages-stream.
-	o When switching message mode, the unread stream changes mode
+* Client and server can communicate by messages instead of packets
 
 Engineering tasks
 =================
-o TcpClient stops Poll() when Connection disconnects
-o TcpServer stops Poll() when it disconnects the Connection
-o Server can Send buffer
-o Client triggers event when first data arrives since last read
-o Client can read raw buffer
+o Can switch message mode on connections between raw, fixed-length, delimiter-bound and length-prefixed.
+o Data read from raw stream is removed from the messages-stream.
+o When switching message mode, the unread stream changes mode
+
+
 
 
 Known Problems

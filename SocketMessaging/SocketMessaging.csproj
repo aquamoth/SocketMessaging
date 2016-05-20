@@ -40,6 +40,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Helpers.cs" />
     <Compile Include="Server\ConnectionEventArgs.cs" />
     <Compile Include="Server\Connection.cs" />
     <Compile Include="TcpClient.cs" />

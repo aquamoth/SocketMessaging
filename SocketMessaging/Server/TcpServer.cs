@@ -47,7 +47,7 @@ namespace SocketMessaging.Server
 		public event EventHandler<ConnectionEventArgs> Connected;
 		protected virtual void OnConnected(ConnectionEventArgs e)
 		{
-			DebugInfo("Connection {0} connected.", e.Connection.Id);
+			Helpers.DebugInfo("Connection {0} connected.", e.Connection.Id);
 			Connected?.Invoke(this, e);
 		}
 
@@ -107,22 +107,6 @@ namespace SocketMessaging.Server
 		}
 
 		#endregion Private methods
-
-		#region Debug logging
-
-		[System.Diagnostics.Conditional("DEBUG")]
-		void DebugInfo(string format, params object[] args)
-		{
-			if (_debugInfoTime == null)
-			{
-				_debugInfoTime = new System.Diagnostics.Stopwatch();
-				_debugInfoTime.Start();
-			}
-			System.Diagnostics.Debug.WriteLine(_debugInfoTime.ElapsedMilliseconds + ": " + format, args);
-		}
-		System.Diagnostics.Stopwatch _debugInfoTime;
-
-		#endregion Debug logging
 
 
 		TcpListenerEx _listener = null;
