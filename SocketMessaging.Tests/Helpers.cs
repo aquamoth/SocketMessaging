@@ -16,5 +16,12 @@ namespace SocketMessaging.Tests
 				.Where(x => x.Port == port)
 				.Any();
 		}
+
+		public static void WaitFor(Func<bool> func, int timeout = 1000)
+		{
+			int timeoutCounter = timeout / 10;
+			while (!func() && --timeoutCounter > 0)
+				System.Threading.Thread.Sleep(10);
+		}
 	}
 }

@@ -56,6 +56,7 @@
     <Compile Include="TcpServerTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TcpClientServerTests.cs" />
+    <Compile Include="MessagingTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SocketMessaging\SocketMessaging.csproj">
