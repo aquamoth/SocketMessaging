@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
@@ -11,7 +12,7 @@ namespace SocketMessaging.Server
 	{
 		public int Id { get; private set; }
 
-		public int Available { get { return _socket == null ? 0 : _socket.Available; } }
+		public int Available { get { return _rawQueue.Count; } }
 
 		public bool IsConnected
 		{
@@ -44,10 +45,74 @@ namespace SocketMessaging.Server
 			}
 		}
 
+		#region Raw
+
 		public void Send(byte[] buffer)
 		{
+			Helpers.DebugInfo("#{0}: Sending {1} bytes.", Id, buffer.Length);
 			_socket.Send(buffer);
 		}
+
+		public byte[] Receive(int maxLength = 0)
+		{
+			maxLength = _rawQueue.Count;
+			var bufferSize = 
+				Math.Min(maxLength, _rawQueue.Count);
+
+			var buffer = new byte[bufferSize];
+			for (var i = 0; i < buffer.Length; i++)
+			{
+				byte data;
+				if (!_rawQueue.TryDequeue(out data))
+					throw new ApplicationException("Expected data in raw queue that was no longer available!");
+				buffer[i] = data;
+			}
+
+			Helpers.DebugInfo("#{0}: Received {1} bytes from raw queue. Queue is now {2} bytes.", Id, bufferSize, _rawQueue.Count);
+			return buffer;
+		}
+
+		//public int Receive(byte[] buffer, int offset, int size, SocketFlags socketFlags)
+		//{
+		//	_triggeredReceiveEventSinceRead = false;
+		//	return _socket.Receive(buffer, offset, size, socketFlags);
+		//}
+
+		#endregion Raw
+
+		#region Messages
+
+		public int MaxMessageSize { get; set; }
+
+		public MessageMode Mode { get; set; }
+
+		public byte[] ReceiveMessage()
+		{
+			switch (Mode)
+			{
+				case MessageMode.DelimiterBound:
+					return null;
+
+				case MessageMode.FixedLength:
+					if (_rawQueue.Count < this.MaxMessageSize)
+						return null;
+					var buffer = Receive(this.MaxMessageSize);
+					if (buffer.Length != this.MaxMessageSize)
+						throw new ApplicationException(string.Format("Expected message of size {0} but got {1} bytes.", MaxMessageSize, buffer.Length));
+					return buffer;
+
+				case MessageMode.PrefixedLength:
+					return null;
+
+				case MessageMode.Raw:
+					throw new InvalidOperationException("You must first select a message mode.");
+
+				default:
+					throw new NotSupportedException();
+			}
+		}
+
+		#endregion Messages
 
 		public void Close()
 		{
@@ -60,13 +125,17 @@ namespace SocketMessaging.Server
 		public event EventHandler ReceivedRaw;
 		protected virtual void OnReceivedRaw(EventArgs e)
 		{
-			if (!_triggeredReceiveEventSinceRead)
-			{
-				_triggeredReceiveEventSinceRead = true;
-				Helpers.DebugInfo("#{0}: Connection received {1} bytes", this.Id, this.Available);
-				ReceivedRaw?.Invoke(this, e);
-			}
+			Helpers.DebugInfo("#{0}: Connection received {1} bytes", this.Id, this.Available);
+			ReceivedRaw?.Invoke(this, e);
 		}
+
+		public event EventHandler ReceivedMessage;
+		protected virtual void OnReceivedMessage(EventArgs e)
+		{
+			Helpers.DebugInfo("#{0}: Connection received a new message", this.Id, this.Available);
+			ReceivedMessage?.Invoke(this, e);
+		}
+		
 
 		public event EventHandler Disconnected;
 		protected virtual void OnDisconnected(EventArgs e)
@@ -80,28 +149,67 @@ namespace SocketMessaging.Server
 
 		internal void Poll()
 		{
-			Helpers.DebugInfo("#{0} Polling connection...", Id);
+			//Helpers.DebugInfo("#{0} Polling connection...", Id);
 			if (!this.IsConnected)
 			{
 				Helpers.DebugInfo("#{0} Connection disconnected", this.Id);
 				OnDisconnected(EventArgs.Empty);
 			}
-			else if (this.Available > 0)
+			else
 			{
-				OnReceivedRaw(EventArgs.Empty);
+				readIntoRawQueue();
 			}
 		}
 
-		internal int Receive(byte[] buffer)
+		private void readIntoRawQueue()
 		{
-			_triggeredReceiveEventSinceRead = false;
-			return _socket.Receive(buffer);
+			if (_socket.Available == 0)
+				return;
+
+			var maxReadSize = MaxMessageSize - _rawQueue.Count;
+			if (maxReadSize <= 0)
+			{
+				Helpers.DebugInfo("#{0}: Not receiving {1} because queue is full.", Id, _socket.Available);
+				return;
+			}
+
+			var bufferSize = Math.Min(maxReadSize, _socket.Available);
+			var buffer = new byte[bufferSize];
+			Helpers.DebugInfo("#{0}: Reading {1} bytes into raw queue.", Id, bufferSize);
+
+			_socket.Receive(buffer);
+			foreach (var b in buffer)
+			{
+				_rawQueue.Enqueue(b);
+			}
+
+			OnReceivedRaw(EventArgs.Empty);
+
+			var numberOfNewMessages = numberOfNewMessagesInRawQueue(buffer);
+			for (var i = 0; i < numberOfNewMessages; i++)
+				OnReceivedMessage(EventArgs.Empty);
 		}
 
-		internal int Receive(byte[] buffer, int offset, int size, SocketFlags socketFlags)
+		private int numberOfNewMessagesInRawQueue(byte[] buffer)
 		{
-			_triggeredReceiveEventSinceRead = false;
-			return _socket.Receive(buffer, offset, size, socketFlags);
+			switch (Mode)
+			{
+				case MessageMode.Raw:
+					Helpers.DebugInfo("#{0}: In raw mode no new messages are found", Id);
+					return 0;
+				//case MessageMode.DelimiterBound:
+				//	return buffer.Where(b => b == MessageDelimiter).Count();
+				//case MessageMode.PrefixedLength:
+				//	break;
+				case MessageMode.FixedLength:
+					var pendingBytes = _rawQueue.Count % MaxMessageSize;
+					var count = (pendingBytes + buffer.Length) / MaxMessageSize;
+					Helpers.DebugInfo("#{0}: With {1} pending bytes and {2} new bytes, with {3} bytes message size, {4} new messages are identified.", Id, pendingBytes, buffer.Length, MaxMessageSize, count);
+					return count;
+
+				default:
+					throw new NotSupportedException();
+			}
 		}
 
 		#endregion Internal logic
@@ -110,9 +218,11 @@ namespace SocketMessaging.Server
 		{
 			Id = id;
 			_socket = socket;
+			MaxMessageSize = 65535;
+			_rawQueue = new ConcurrentQueue<byte>();
 		}
 
 		protected Socket _socket;
-		bool _triggeredReceiveEventSinceRead = false;
+		readonly ConcurrentQueue<byte> _rawQueue;
 	}
 }

@@ -13,6 +13,7 @@ namespace SocketMessaging.Tests
 	[TestClass]
 	public class TcpClientServerTests : IDisposable
 	{
+		const int DEFAULT_MAX_MESSAGE_SIZE = 65535;
 		const int SERVER_PORT = 7783;
 		readonly Server.TcpServer server;
 		TcpClient client = null;
@@ -109,16 +110,18 @@ namespace SocketMessaging.Tests
 			client.Send(buffer1);
 			client.Send(buffer2);
 
-			var buffer = new byte[expectedBuffer.Length + 1];
+			var buffer = new byte[0].AsQueryable<byte>();
 			var actualLength = 0;
 			while (actualLength < expectedBuffer.Length)
 			{
 				waitFor(() => serverConnection.Available > 0);
 				Assert.IsTrue(serverConnection.Available > 0, "Server should receive packet.");
-				actualLength += serverConnection.Receive(buffer, actualLength, buffer.Length - actualLength, SocketFlags.None);
+				var data = serverConnection.Receive();
+				buffer = buffer.Concat(data);
+				actualLength += data.Length;
 			}
 
-			CollectionAssert.AreEqual(expectedBuffer, buffer.Take(actualLength).ToArray());
+			CollectionAssert.AreEqual(expectedBuffer, buffer.ToArray());
 		}
 
 		[TestMethod]
@@ -139,16 +142,18 @@ namespace SocketMessaging.Tests
 			serverConnection.Send(buffer1);
 			serverConnection.Send(buffer2);
 
-			var buffer = new byte[expectedBuffer.Length + 1];
+			var buffer = new byte[0].AsQueryable<byte>();
 			var actualLength = 0;
 			while (actualLength < expectedBuffer.Length)
 			{
 				waitFor(() => client.Available > 0);
-				Assert.IsTrue(client.Available > 0, "Client should receive packet:");
-				actualLength += client.Receive(buffer, actualLength, buffer.Length - actualLength, SocketFlags.None);
+				Assert.IsTrue(client.Available > 0, "Client should receive packets.");
+				var data = client.Receive();
+				buffer = buffer.Concat(data);
+				actualLength += data.Length;
 			}
 
-			CollectionAssert.AreEqual(expectedBuffer, buffer.Take(actualLength).ToArray());
+			CollectionAssert.AreEqual(expectedBuffer, buffer.ToArray());
 		}
 
 		[TestMethod]
@@ -173,16 +178,15 @@ namespace SocketMessaging.Tests
 
 			client.Send(buffer);
 			waitFor(() => receiveEvents != 1, 100);
-			Assert.AreEqual(1, receiveEvents, "Connection should not trigger multiple received raw events between reads.");
+			Assert.AreEqual(2, receiveEvents, "Connection should trigger received raw after second send.");
 
-			var receiveBuffer = new byte[100];
-			serverConnection.Receive(receiveBuffer);
-			waitFor(() => receiveEvents != 1, 100);
-			Assert.AreEqual(1, receiveEvents, "Connection should not trigger received raw events just because buffer was read.");
+			var receiveBuffer = serverConnection.Receive();
+			waitFor(() => receiveEvents != 2, 100);
+			Assert.AreEqual(2, receiveEvents, "Connection should not trigger received raw events just because buffer was read.");
 
 			client.Send(buffer);
-			waitFor(() => receiveEvents != 1);
-			Assert.AreEqual(2, receiveEvents, "Connection should trigger new received raw event.");
+			waitFor(() => receiveEvents != 2);
+			Assert.AreEqual(3, receiveEvents, "Connection should trigger received raw event after third send.");
 		}
 
 		[TestMethod]
@@ -190,15 +194,16 @@ namespace SocketMessaging.Tests
 		public void Can_read_raw_stream_from_connection()
 		{
 			Connection serverConnection = null;
-			var connectionBuffer = new List<byte>();
+			var connectionBuffer = new byte[0].AsQueryable();
+			var connectionBufferLength = 0;
 
 			server.Connected += (s, e) => {
 				serverConnection = e.Connection;
 				e.Connection.ReceivedRaw += (s2, e2) =>
 				{
-					var receiveBuffer = new byte[e.Connection.Available];
-					e.Connection.Receive(receiveBuffer);
-					connectionBuffer.AddRange(receiveBuffer);
+					var receiveBuffer = e.Connection.Receive();
+					connectionBuffer = connectionBuffer.Concat(receiveBuffer);
+					connectionBufferLength += receiveBuffer.Length;
 				};
 			};
 			connectClient();
@@ -206,11 +211,93 @@ namespace SocketMessaging.Tests
 			var buffer = new byte[500000];
 			new Random().NextBytes(buffer);
 			client.Send(buffer);
-			waitFor(() => connectionBuffer.Count >= buffer.Length);
+			waitFor(() => connectionBufferLength >= buffer.Length);
 
-			CollectionAssert.AreEqual(buffer, connectionBuffer, "Connection should receive the same data the client sent.");
+			CollectionAssert.AreEqual(buffer, connectionBuffer.ToArray(), "Connection should receive the same data the client sent.");
 		}
 
+		[TestMethod]
+		[TestCategory("Connection")]
+		public void Can_switch_messaging_mode()
+		{
+			connectClient();
+			waitFor(() => server.Connections.Any());
+			Assert.AreEqual(MessageMode.Raw, client.Mode, "Client starts in raw message mode");
+			Assert.AreEqual(MessageMode.Raw, server.Connections.Single().Mode, "Server starts in raw message mode");
+			client.Mode = MessageMode.DelimiterBound;
+			Assert.AreEqual(MessageMode.DelimiterBound, client.Mode, "Client mode should be DelimiterBound");
+			client.Mode = MessageMode.PrefixedLength;
+			Assert.AreEqual(MessageMode.PrefixedLength, client.Mode, "Client mode should be PrefixedLength");
+			client.Mode = MessageMode.FixedLength;
+			Assert.AreEqual(MessageMode.FixedLength, client.Mode, "Client mode should be FixedLength");
+
+			client.MaxMessageSize = 10;
+			Assert.AreEqual(10, client.MaxMessageSize, "Max message size should be read/write");
+		}
+
+		[TestMethod]
+		[TestCategory("Connection")]
+		[ExpectedException(typeof(InvalidOperationException))]
+		public void Cant_receive_messages_when_in_raw_packet_mode()
+		{
+			connectClient();
+			var buffer = client.ReceiveMessage();
+		}
+
+		[TestMethod]
+		[TestCategory("Connection")]
+		public void Connection_returns_null_when_no_message_is_available()
+		{
+			byte[] buffer;
+			connectClient();
+
+			client.Mode = MessageMode.DelimiterBound;
+			buffer = client.ReceiveMessage();
+			Assert.IsNull(buffer, "Connection should return null when there is no delimited message");
+
+			client.Mode = MessageMode.FixedLength;
+			buffer = client.ReceiveMessage();
+			Assert.IsNull(buffer, "Connection should return null when there is no fixed length message");
+
+			client.Mode = MessageMode.PrefixedLength;
+			buffer = client.ReceiveMessage();
+			Assert.IsNull(buffer, "Connection should return null when there is no prefixed length message");
+		}
+
+		[TestMethod]
+		[TestCategory("Connection")]
+		public void Can_receive_fixed_length_messages()
+		{
+			var receivedMessageCounter = 0;
+
+			connectClient();
+			Assert.AreEqual(DEFAULT_MAX_MESSAGE_SIZE, client.MaxMessageSize, "Connection should have a sane default max message size");
+			client.MaxMessageSize = 10;
+			client.Mode = MessageMode.FixedLength;
+			client.ReceivedMessage += (s, e) => { receivedMessageCounter++; };
+
+			waitFor(() => server.Connections.Any());
+			var serverConnection = server.Connections.Single();
+
+			var sentMessage = new byte[30];
+			new Random().NextBytes(sentMessage);
+			serverConnection.Send(sentMessage);
+
+			waitFor(() => receivedMessageCounter >= 1);
+			Assert.IsTrue(receivedMessageCounter >= 1, "Client should trigger one message received event");
+			var receivedMessage = client.ReceiveMessage();
+			CollectionAssert.AreEqual(sentMessage.Take(client.MaxMessageSize).ToArray(), receivedMessage, "First message wasn't correctly received");
+
+			waitFor(() => receivedMessageCounter >= 2);
+			Assert.IsTrue(receivedMessageCounter >= 2, "Client should trigger two message received event");
+			receivedMessage = client.ReceiveMessage();
+			CollectionAssert.AreEqual(sentMessage.Skip(client.MaxMessageSize).Take(client.MaxMessageSize).ToArray(), receivedMessage, "Second message wasn't correctly received");
+
+			waitFor(() => receivedMessageCounter >= 3);
+			Assert.IsTrue(receivedMessageCounter >= 3, "Client should trigger three message received event");
+			receivedMessage = client.ReceiveMessage();
+			CollectionAssert.AreEqual(sentMessage.Skip(2 * client.MaxMessageSize).Take(client.MaxMessageSize).ToArray(), receivedMessage, "Third message wasn't correctly received");
+		}
 
 
 

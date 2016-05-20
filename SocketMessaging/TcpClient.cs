@@ -59,7 +59,7 @@ namespace SocketMessaging
 				Helpers.DebugInfo("#{0}: Polling thread started", Id);
 				while (true)
 				{
-					Helpers.DebugInfo("#{0}: Polling...", Id);
+					//Helpers.DebugInfo("#{0}: Polling...", Id);
 					this.Poll();
 					Thread.Sleep(POLLTHREAD_SLEEP);
 				}
