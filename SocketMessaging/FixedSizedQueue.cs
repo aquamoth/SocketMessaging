@@ -62,11 +62,11 @@ namespace SocketMessaging
 			return buffer;
 		}
 
-		internal byte[] ReadUntil(byte delimiter)
+		internal byte[] ReadUntil(byte delimiter, int maxReadSize)
 		{
 			var counter = 0;
 			var walker = _readIndex;
-			while (walker != _writeIndex)
+			while (walker != _writeIndex && counter < maxReadSize)
 			{
 				if (_queue[walker] == delimiter)
 					return Read(counter + 1);

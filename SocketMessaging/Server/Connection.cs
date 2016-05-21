@@ -82,7 +82,7 @@ namespace SocketMessaging.Server
 			{
 				case MessageMode.DelimiterBound:
 					{
-						var buffer = _rawQueue.ReadUntil(Delimiter);
+						var buffer = _rawQueue.ReadUntil(Delimiter, MaxMessageSize);
 						if (buffer == null)
 							return null;
 						return buffer.Take(buffer.Length - 1).ToArray();

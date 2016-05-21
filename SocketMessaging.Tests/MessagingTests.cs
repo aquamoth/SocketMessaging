@@ -125,7 +125,6 @@ namespace SocketMessaging.Tests
 			Helpers.WaitFor(() => server.Connections.Any());
 			var serverConnection = server.Connections.Single();
 
-			serverConnection.Mode = MessageMode.DelimiterBound;
 			client.Mode = MessageMode.DelimiterBound;
 			client.ReceivedMessage += (s, e) => { receivedMessageCounter++; };
 
@@ -155,6 +154,27 @@ namespace SocketMessaging.Tests
 			CollectionAssert.AreEqual(sentMessage3, receivedMessage, "Third message wasn't correctly received");
 		}
 
+		[TestMethod]
+		[TestCategory("Connection: Messages")]
+		public void Delimited_messages_cant_overflow_MaxMessageSize()
+		{
+			var receivedMessageCounter = 0;
+			Helpers.WaitFor(() => server.Connections.Any());
+			var serverConnection = server.Connections.Single();
+
+			client.Mode = MessageMode.DelimiterBound;
+			client.MaxMessageSize = 10;
+			client.ReceivedMessage += (s, e) => { receivedMessageCounter++; };
+
+			var delimiter = new byte[] { 0x0a };
+			var sentMessage = System.Text.Encoding.UTF8.GetBytes(Guid.NewGuid().ToString());
+			serverConnection.Send(sentMessage.Concat(delimiter).ToArray());
+
+			Helpers.WaitFor(() => receivedMessageCounter >= 1, 100);
+			//Assert.IsTrue(receivedMessageCounter == 0, "Client should not trigger a message received event");
+			var receivedMessage = client.ReceiveMessage();
+			Assert.IsNull(receivedMessage, "Client should not return message larger than MaxMessageSize");
+		}
 
 	}
 }
