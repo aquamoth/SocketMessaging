@@ -108,6 +108,52 @@ namespace SocketMessaging.Tests
 			CollectionAssert.AreEqual(sentMessage.Skip(2 * client.MaxMessageSize).Take(client.MaxMessageSize).ToArray(), receivedMessage, "Third message wasn't correctly received");
 		}
 
+		[TestMethod]
+		[TestCategory("Connection: Messages")]
+		public void Can_switch_delimiter()
+		{
+			Assert.AreEqual(0x0a, client.Delimiter);
+			client.Delimiter = 0x20;
+			Assert.AreEqual(0x20, client.Delimiter);
+		}
+
+		[TestMethod]
+		[TestCategory("Connection: Messages")]
+		public void Can_receive_delimited_messages()
+		{
+			var receivedMessageCounter = 0;
+			Helpers.WaitFor(() => server.Connections.Any());
+			var serverConnection = server.Connections.Single();
+
+			serverConnection.Mode = MessageMode.DelimiterBound;
+			client.Mode = MessageMode.DelimiterBound;
+			client.ReceivedMessage += (s, e) => { receivedMessageCounter++; };
+
+			var sentMessage1 = System.Text.Encoding.UTF8.GetBytes(Guid.NewGuid().ToString() + "\n");
+			serverConnection.Send(sentMessage1);
+
+			var sentMessage2 = System.Text.Encoding.UTF8.GetBytes(Guid.NewGuid().ToString() + "\n");
+			serverConnection.Send(sentMessage2);
+
+			var sentMessage3 = System.Text.Encoding.UTF8.GetBytes(Guid.NewGuid().ToString() + "\n");
+			serverConnection.Send(sentMessage3);
+
+			Helpers.WaitFor(() => receivedMessageCounter >= 1);
+			Assert.IsTrue(receivedMessageCounter >= 1, "Client should trigger one message received event");
+			var receivedMessage = client.ReceiveMessage();
+			//CollectionAssert.AreEqual(sentMessage1, receivedMessage, "First message wasn't correctly received");
+
+			//Helpers.WaitFor(() => receivedMessageCounter >= 2);
+			//Assert.IsTrue(receivedMessageCounter >= 2, "Client should trigger two message received event");
+			//receivedMessage = client.ReceiveMessage();
+			//CollectionAssert.AreEqual(sentMessage2, receivedMessage, "Second message wasn't correctly received");
+
+			//Helpers.WaitFor(() => receivedMessageCounter >= 3);
+			//Assert.IsTrue(receivedMessageCounter >= 3, "Client should trigger three message received event");
+			//receivedMessage = client.ReceiveMessage();
+			//CollectionAssert.AreEqual(sentMessage3, receivedMessage, "Third message wasn't correctly received");
+		}
+
 
 	}
 }

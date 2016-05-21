@@ -84,6 +84,8 @@ namespace SocketMessaging.Server
 
 		public int MaxMessageSize { get; set; }
 
+		public int Delimiter { get; set; }
+
 		public MessageMode Mode { get; set; }
 
 		public byte[] ReceiveMessage()
@@ -197,8 +199,8 @@ namespace SocketMessaging.Server
 				case MessageMode.Raw:
 					Helpers.DebugInfo("#{0}: In raw mode no new messages are found", Id);
 					return 0;
-				//case MessageMode.DelimiterBound:
-				//	return buffer.Where(b => b == MessageDelimiter).Count();
+				case MessageMode.DelimiterBound:
+					return buffer.Where(b => b == Delimiter).Count();
 				//case MessageMode.PrefixedLength:
 				//	break;
 				case MessageMode.FixedLength:
@@ -218,7 +220,8 @@ namespace SocketMessaging.Server
 		{
 			Id = id;
 			_socket = socket;
-			MaxMessageSize = 65535;
+			MaxMessageSize = 65535; //Same size as default socket window
+			Delimiter = 0x0a; //\n (<CR>) as default delimiter
 			_rawQueue = new ConcurrentQueue<byte>();
 		}
 
