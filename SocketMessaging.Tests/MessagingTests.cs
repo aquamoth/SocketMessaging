@@ -176,5 +176,35 @@ namespace SocketMessaging.Tests
 			Assert.IsNull(receivedMessage, "Client should not return message larger than MaxMessageSize");
 		}
 
+		[TestMethod]
+		[TestCategory("Connection: Messages")]
+		public void Can_receive_length_prefixed_messages()
+		{
+			var receivedMessageCounter = 0;
+			Helpers.WaitFor(() => server.Connections.Any());
+			var serverConnection = server.Connections.Single();
+
+			client.Mode = MessageMode.PrefixedLength;
+			client.ReceivedMessage += (s, e) => { receivedMessageCounter++; };
+
+			var sentMessage1 = System.Text.Encoding.UTF8.GetBytes(Guid.NewGuid().ToString());
+			var messageSize1 = BitConverter.GetBytes(sentMessage1.Length);
+			serverConnection.Send(messageSize1.Concat(sentMessage1).ToArray());
+
+			var sentMessage2 = System.Text.Encoding.UTF8.GetBytes(Guid.NewGuid().ToString() + Guid.NewGuid().ToString());
+			var messageSize2 = BitConverter.GetBytes(sentMessage2.Length);
+			serverConnection.Send(messageSize2.Concat(sentMessage2).ToArray());
+
+			Helpers.WaitFor(() => receivedMessageCounter >= 1);
+			Assert.IsTrue(receivedMessageCounter >= 1, "Client should trigger one message received event");
+			var receivedMessage = client.ReceiveMessage();
+			CollectionAssert.AreEqual(sentMessage1, receivedMessage, "First message wasn't correctly received");
+
+			Helpers.WaitFor(() => receivedMessageCounter >= 2);
+			Assert.IsTrue(receivedMessageCounter >= 2, "Client should trigger two message received event");
+			receivedMessage = client.ReceiveMessage();
+			CollectionAssert.AreEqual(sentMessage2, receivedMessage, "Second message wasn't correctly received");
+		}
+
 	}
 }

@@ -4,8 +4,8 @@ User stories
 
 Engineering tasks
 =================
-* Messages with delimiter inside gets properly encoded
-o PrefixedLength messages begin with an INT32 describing the message length
+* PrefixedLength messages begin with an INT32 describing the message length
+o Messages with delimiter inside gets properly encoded
 o Can send auto-delimited messages
 o Can send and receive string messages with specific encoding
 o Changing message mode retriggers new message events
