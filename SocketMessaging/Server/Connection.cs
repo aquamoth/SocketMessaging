@@ -55,20 +55,8 @@ namespace SocketMessaging.Server
 
 		public byte[] Receive(int maxLength = 0)
 		{
-			maxLength = _rawQueue.Count;
-			var bufferSize = 
-				Math.Min(maxLength, _rawQueue.Count);
-
-			var buffer = new byte[bufferSize];
-			for (var i = 0; i < buffer.Length; i++)
-			{
-				byte data;
-				if (!_rawQueue.TryDequeue(out data))
-					throw new ApplicationException("Expected data in raw queue that was no longer available!");
-				buffer[i] = data;
-			}
-
-			Helpers.DebugInfo("#{0}: Received {1} bytes from raw queue. Queue is now {2} bytes.", Id, bufferSize, _rawQueue.Count);
+			var buffer = _rawQueue.Read(maxLength);
+			Helpers.DebugInfo("#{0}: Received {1} bytes from raw queue. Queue is now {2} bytes.", Id, buffer.Length, _rawQueue.Count);
 			return buffer;
 		}
 
@@ -168,22 +156,17 @@ namespace SocketMessaging.Server
 			if (_socket.Available == 0)
 				return;
 
-			var maxReadSize = MaxMessageSize - _rawQueue.Count;
-			if (maxReadSize <= 0)
+			if (_rawQueue.UnusedQueueLength <= 0)
 			{
 				Helpers.DebugInfo("#{0}: Not receiving {1} because queue is full.", Id, _socket.Available);
 				return;
 			}
 
-			var bufferSize = Math.Min(maxReadSize, _socket.Available);
+			var bufferSize = Math.Min(_rawQueue.UnusedQueueLength, _socket.Available);
 			var buffer = new byte[bufferSize];
 			Helpers.DebugInfo("#{0}: Reading {1} bytes into raw queue.", Id, bufferSize);
-
 			_socket.Receive(buffer);
-			foreach (var b in buffer)
-			{
-				_rawQueue.Enqueue(b);
-			}
+			_rawQueue.Write(buffer);
 
 			OnReceivedRaw(EventArgs.Empty);
 
@@ -222,10 +205,10 @@ namespace SocketMessaging.Server
 			_socket = socket;
 			MaxMessageSize = 65535; //Same size as default socket window
 			Delimiter = 0x0a; //\n (<CR>) as default delimiter
-			_rawQueue = new ConcurrentQueue<byte>();
+			_rawQueue = new FixedSizedQueue(MaxMessageSize);
 		}
 
 		protected Socket _socket;
-		readonly ConcurrentQueue<byte> _rawQueue;
+		readonly FixedSizedQueue _rawQueue;
 	}
 }
