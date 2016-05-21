@@ -129,29 +129,30 @@ namespace SocketMessaging.Tests
 			client.Mode = MessageMode.DelimiterBound;
 			client.ReceivedMessage += (s, e) => { receivedMessageCounter++; };
 
-			var sentMessage1 = System.Text.Encoding.UTF8.GetBytes(Guid.NewGuid().ToString() + "\n");
-			serverConnection.Send(sentMessage1);
+			var delimiter = new byte[] { 0x0a };
+			var sentMessage1 = System.Text.Encoding.UTF8.GetBytes(Guid.NewGuid().ToString());
+			serverConnection.Send(sentMessage1.Concat(delimiter).ToArray());
 
-			var sentMessage2 = System.Text.Encoding.UTF8.GetBytes(Guid.NewGuid().ToString() + "\n");
-			serverConnection.Send(sentMessage2);
+			var sentMessage2 = System.Text.Encoding.UTF8.GetBytes(Guid.NewGuid().ToString());
+			serverConnection.Send(sentMessage2.Concat(delimiter).ToArray());
 
-			var sentMessage3 = System.Text.Encoding.UTF8.GetBytes(Guid.NewGuid().ToString() + "\n");
-			serverConnection.Send(sentMessage3);
+			var sentMessage3 = System.Text.Encoding.UTF8.GetBytes(Guid.NewGuid().ToString());
+			serverConnection.Send(sentMessage3.Concat(delimiter).ToArray());
 
 			Helpers.WaitFor(() => receivedMessageCounter >= 1);
 			Assert.IsTrue(receivedMessageCounter >= 1, "Client should trigger one message received event");
 			var receivedMessage = client.ReceiveMessage();
-			//CollectionAssert.AreEqual(sentMessage1, receivedMessage, "First message wasn't correctly received");
+			CollectionAssert.AreEqual(sentMessage1, receivedMessage, "First message wasn't correctly received");
 
-			//Helpers.WaitFor(() => receivedMessageCounter >= 2);
-			//Assert.IsTrue(receivedMessageCounter >= 2, "Client should trigger two message received event");
-			//receivedMessage = client.ReceiveMessage();
-			//CollectionAssert.AreEqual(sentMessage2, receivedMessage, "Second message wasn't correctly received");
+			Helpers.WaitFor(() => receivedMessageCounter >= 2);
+			Assert.IsTrue(receivedMessageCounter >= 2, "Client should trigger two message received event");
+			receivedMessage = client.ReceiveMessage();
+			CollectionAssert.AreEqual(sentMessage2, receivedMessage, "Second message wasn't correctly received");
 
-			//Helpers.WaitFor(() => receivedMessageCounter >= 3);
-			//Assert.IsTrue(receivedMessageCounter >= 3, "Client should trigger three message received event");
-			//receivedMessage = client.ReceiveMessage();
-			//CollectionAssert.AreEqual(sentMessage3, receivedMessage, "Third message wasn't correctly received");
+			Helpers.WaitFor(() => receivedMessageCounter >= 3);
+			Assert.IsTrue(receivedMessageCounter >= 3, "Client should trigger three message received event");
+			receivedMessage = client.ReceiveMessage();
+			CollectionAssert.AreEqual(sentMessage3, receivedMessage, "Third message wasn't correctly received");
 		}
 
 

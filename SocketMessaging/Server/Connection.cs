@@ -72,7 +72,7 @@ namespace SocketMessaging.Server
 
 		public int MaxMessageSize { get; set; }
 
-		public int Delimiter { get; set; }
+		public byte Delimiter { get; set; }
 
 		public MessageMode Mode { get; set; }
 
@@ -81,15 +81,22 @@ namespace SocketMessaging.Server
 			switch (Mode)
 			{
 				case MessageMode.DelimiterBound:
-					return null;
+					{
+						var buffer = _rawQueue.ReadUntil(Delimiter);
+						if (buffer == null)
+							return null;
+						return buffer.Take(buffer.Length - 1).ToArray();
+					}
 
 				case MessageMode.FixedLength:
-					if (_rawQueue.Count < this.MaxMessageSize)
-						return null;
-					var buffer = Receive(this.MaxMessageSize);
-					if (buffer.Length != this.MaxMessageSize)
-						throw new ApplicationException(string.Format("Expected message of size {0} but got {1} bytes.", MaxMessageSize, buffer.Length));
-					return buffer;
+					{
+						if (_rawQueue.Count < this.MaxMessageSize)
+							return null;
+						var buffer = Receive(this.MaxMessageSize);
+						if (buffer.Length != this.MaxMessageSize)
+							throw new ApplicationException(string.Format("Expected message of size {0} but got {1} bytes.", MaxMessageSize, buffer.Length));
+						return buffer;
+					}
 
 				case MessageMode.PrefixedLength:
 					return null;
