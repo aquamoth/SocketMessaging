@@ -53,6 +53,7 @@
   </Choose>
   <ItemGroup>
     <Compile Include="ConnectionTests.cs" />
+    <Compile Include="FixedSizedQueueTests.cs" />
     <Compile Include="Helpers.cs" />
     <Compile Include="TcpServerTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

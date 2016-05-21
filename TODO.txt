@@ -4,16 +4,21 @@ User stories
 
 Engineering tasks
 =================
-o Changing message mode retriggers new message events
-o DelimiterBound mode splits packets by delimiter
+* DelimiterBound mode splits packets by delimiter
+	o Delimited messages cant overflow max size
+	o Messages with delimiter inside gets properly encoded
 o PrefixedLength messages begin with an INT32 describing the message length
-o Switching message mode affects the unread stream
+o Can send auto-delimited messages
+o Can send and receive string messages with specific encoding
+o Changing message mode retriggers new message events
+	o Switching message mode affects the unread stream
 o Data read from raw stream is removed from the messages-stream
 o Data read as a message is removed from the raw stream
 o Messages are limited by MaxMessageSize. Throws an exception if a message is read that is larger than max size
 o Reading the raw stream is not limited by MaxMessageSize
 o MaxMessageSize can be increased or lowered during communication and affects the unread stream
-
+o Should support multi-byte delimiters
+o Should support multiple delimiters?
 
 
 
