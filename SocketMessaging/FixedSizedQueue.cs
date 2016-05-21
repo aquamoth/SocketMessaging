@@ -13,7 +13,7 @@ namespace SocketMessaging
 			_queue = new byte[queueSize + 1]; //Add a token-byte to the queue to discern start-of-read with start-of-write
 		}
 
-		public int Length { get { return (_queue.Length + _writeIndex - _readIndex) % _queue.Length; } }
+		public int Count { get { return (_queue.Length + _writeIndex - _readIndex) % _queue.Length; } }
 
 		public int UnusedQueueLength { get { return (_queue.Length + _readIndex - _writeIndex - 1) % _queue.Length; } }
 
@@ -43,8 +43,8 @@ namespace SocketMessaging
 		internal byte[] Read(int maxReadSize = 0)
 		{
 			var bufferLength = maxReadSize == 0 
-				? this.Length 
-				: Math.Min(this.Length, maxReadSize);
+				? this.Count 
+				: Math.Min(this.Count, maxReadSize);
 
 			var buffer = new byte[bufferLength];
 

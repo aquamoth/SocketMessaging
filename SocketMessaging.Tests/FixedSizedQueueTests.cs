@@ -14,7 +14,7 @@ namespace SocketMessaging.Tests
 		public void Queue_inits_as_empty()
 		{
 			var queue = new FixedSizedQueue(1024);
-			Assert.AreEqual(0, queue.Length);
+			Assert.AreEqual(0, queue.Count);
 		}
 
 		[TestMethod]
@@ -22,13 +22,13 @@ namespace SocketMessaging.Tests
 		{
 			var queue = new FixedSizedQueue(1024);
 			queue.Write(new byte[256]);
-			Assert.AreEqual(256, queue.Length);
+			Assert.AreEqual(256, queue.Count);
 			queue.Write(new byte[256]);
-			Assert.AreEqual(512, queue.Length);
+			Assert.AreEqual(512, queue.Count);
 			queue.Write(new byte[256]);
-			Assert.AreEqual(768, queue.Length);
+			Assert.AreEqual(768, queue.Count);
 			queue.Write(new byte[256]);
-			Assert.AreEqual(1024, queue.Length);
+			Assert.AreEqual(1024, queue.Count);
 		}
 
 		[TestMethod]
