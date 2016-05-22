@@ -351,5 +351,29 @@ Onfest Radestone, þer he bock radde.
 			Assert.AreEqual(sentMessage, receivedMessage, "Message wasn't correctly received");
 		}
 
+		[TestMethod]
+		[TestCategory("Connection: Messages")]
+		public void Can_receive_message_as_encoded_string()
+		{
+			var customEncoding = System.Text.Encoding.GetEncoding("ISO-8859-1");
+			var sentMessage = @"Mitt namn är Mattias Åslund. För övrigt är jag programmerare.";
+			var sentBuffer = customEncoding.GetBytes(sentMessage);
+
+			var receivedMessageCounter = 0;
+			Helpers.WaitFor(() => server.Connections.Any());
+			var serverConnection = server.Connections.Single();
+
+			client.MaxMessageSize = sentBuffer.Length;
+			client.MessageEncoding = customEncoding;
+			client.Mode = MessageMode.FixedLength;
+			client.ReceivedMessage += (s, e) => { receivedMessageCounter++; };
+
+			serverConnection.Send(sentBuffer);
+
+			Helpers.WaitFor(() => receivedMessageCounter >= 1);
+			var receivedMessage = client.ReceiveMessageString();
+			Assert.AreEqual(sentMessage, receivedMessage, "Message wasn't correctly received");
+		}
+
 	}
 }

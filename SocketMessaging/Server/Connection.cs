@@ -45,15 +45,15 @@ namespace SocketMessaging.Server
 			}
 		}
 
+		#region Send and Receive
+
+		public int MaxMessageSize { get; set; }
+
+		public MessageMode Mode { get; set; }
+
+		public byte Delimiter { get; set; }
+
 		public Encoding MessageEncoding { get; set; }
-
-		#region Raw
-
-		public void Send(string message)
-		{
-			var buffer = MessageEncoding.GetBytes(message);
-			Send(buffer);
-		}
 
 		public void Send(byte[] buffer)
 		{
@@ -82,28 +82,18 @@ namespace SocketMessaging.Server
 			}
 		}
 
+		public void Send(string message)
+		{
+			var buffer = MessageEncoding.GetBytes(message);
+			Send(buffer);
+		}
+
 		public byte[] Receive(int maxLength = 0)
 		{
 			var buffer = _rawQueue.Read(maxLength);
 			Helpers.DebugInfo("#{0}: Received {1} bytes from raw queue. Queue is now {2} bytes.", Id, buffer.Length, _rawQueue.Count);
 			return buffer;
 		}
-
-		//public int Receive(byte[] buffer, int offset, int size, SocketFlags socketFlags)
-		//{
-		//	_triggeredReceiveEventSinceRead = false;
-		//	return _socket.Receive(buffer, offset, size, socketFlags);
-		//}
-
-		#endregion Raw
-
-		#region Messages
-
-		public int MaxMessageSize { get; set; }
-
-		public byte Delimiter { get; set; }
-
-		public MessageMode Mode { get; set; }
 
 		public byte[] ReceiveMessage()
 		{
@@ -149,7 +139,12 @@ namespace SocketMessaging.Server
 			}
 		}
 
-		#endregion Messages
+		public string ReceiveMessageString()
+		{
+			return MessageEncoding.GetString(ReceiveMessage());
+		}
+
+		#endregion Send and Receive
 
 		public void Close()
 		{
