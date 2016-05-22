@@ -99,7 +99,18 @@ namespace SocketMessaging.Server
 					}
 
 				case MessageMode.PrefixedLength:
-					return null;
+					{
+						if (_rawQueue.Count < 4)
+							return null;
+						
+						var messageSize = BitConverter.ToInt32(_rawQueue.Peek(0, 4), 0);
+						if (messageSize > _rawQueue.Count + 4)
+							return null;
+
+						_rawQueue.Read(4);
+						var buffer = _rawQueue.Read(messageSize);
+						return buffer;
+					}
 
 				case MessageMode.Raw:
 					throw new InvalidOperationException("You must first select a message mode.");
@@ -189,10 +200,23 @@ namespace SocketMessaging.Server
 				case MessageMode.Raw:
 					Helpers.DebugInfo("#{0}: In raw mode no new messages are found", Id);
 					return 0;
+
 				case MessageMode.DelimiterBound:
 					return buffer.Where(b => b == Delimiter).Count();
-				//case MessageMode.PrefixedLength:
-				//	break;
+
+				case MessageMode.PrefixedLength:
+					var queueLengthBeforeBuffer = _rawQueue.Count - buffer.Length;
+					var peekPosition = 0;
+					var counter = 0;
+					while (peekPosition < _rawQueue.Count)
+					{
+						var messageSize = BitConverter.ToInt32(_rawQueue.Peek(peekPosition, 4), 0);
+						peekPosition += 4 + messageSize;
+						if (peekPosition >= queueLengthBeforeBuffer && peekPosition <= _rawQueue.Count)
+							counter++;
+					}
+					return counter;
+
 				case MessageMode.FixedLength:
 					var pendingBytes = _rawQueue.Count % MaxMessageSize;
 					var count = (pendingBytes + buffer.Length) / MaxMessageSize;
