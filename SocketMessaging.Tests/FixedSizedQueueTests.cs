@@ -89,5 +89,48 @@ namespace SocketMessaging.Tests
 			CollectionAssert.AreEqual(write1.Concat(write2).ToArray(), read1.Concat(read2).ToArray());
 		}
 
+		[TestMethod]
+		[ExpectedException(typeof(OverflowException))]
+		public void Peeking_past_end_of_queue_throws_exception()
+		{
+			var queue = new FixedSizedQueue(1024);
+			var actual = queue.Peek(0, 1);
+		}
+
+		[TestMethod]
+		public void Can_peek_at_queue()
+		{
+			var queue = new FixedSizedQueue(100);
+
+			var writeBuffer = new byte[100];
+			new Random().NextBytes(writeBuffer);
+			queue.Write(writeBuffer);
+
+			var expected = writeBuffer.Skip(70).Take(10).ToArray();
+			var actual = queue.Peek(70, 10);
+			CollectionAssert.AreEqual(expected, actual, "Peeking past end of queue should return null");
+		}
+
+		[TestMethod]
+		public void Can_peek_more_than_queue_max_size()
+		{
+			var queue = new FixedSizedQueue(100);
+
+			var writeBuffer1 = new byte[60];
+			new Random().NextBytes(writeBuffer1);
+			queue.Write(writeBuffer1);
+			queue.Read(50);
+			var writeBuffer2 = new byte[60];
+			new Random().NextBytes(writeBuffer2);
+			queue.Write(writeBuffer2);
+
+			var expected = writeBuffer2.Skip(35).Take(10).ToArray();
+			var actualPeeked = queue.Peek(45, 10);
+			CollectionAssert.AreEqual(expected, actualPeeked, "Peeking past queue max size should work fine");
+
+			queue.Read(45);
+			var actualRead = queue.Read(10);
+			CollectionAssert.AreEqual(expected, actualRead, "Reading should return same data as was previously peeked");
+		}
 	}
 }

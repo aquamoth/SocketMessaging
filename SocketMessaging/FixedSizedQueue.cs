@@ -40,6 +40,27 @@ namespace SocketMessaging
 			}
 		}
 
+		internal byte[] Peek(int peekPosition, int numberOfBytes)
+		{
+			if (peekPosition + numberOfBytes >= Count)
+				throw new OverflowException("Cant peek outside end of queue");
+
+			var buffer = new byte[numberOfBytes];
+
+			var bufferIndex = 0;
+			var startIndex = (_readIndex + peekPosition) % _queue.Length;
+			if (numberOfBytes > _queue.Length - startIndex)
+			{
+				bufferIndex = _queue.Length - startIndex;
+				Array.Copy(_queue, startIndex, buffer, 0, bufferIndex);
+				startIndex = 0;
+			}
+
+			Array.Copy(_queue, startIndex, buffer, bufferIndex, buffer.Length - bufferIndex);
+
+			return buffer;
+		}
+
 		internal byte[] Read(int maxReadSize = 0)
 		{
 			var bufferLength = maxReadSize == 0 
