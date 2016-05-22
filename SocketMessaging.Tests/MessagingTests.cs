@@ -206,5 +206,98 @@ namespace SocketMessaging.Tests
 			CollectionAssert.AreEqual(sentMessage2, receivedMessage, "Second message wasn't correctly received");
 		}
 
+		[TestMethod]
+		[TestCategory("Connection: Messages")]
+		public void Can_send_delimited_messages()
+		{
+			var receivedMessageCounter = 0;
+			Helpers.WaitFor(() => server.Connections.Any());
+			var serverConnection = server.Connections.Single();
+			serverConnection.Mode = MessageMode.DelimiterBound;
+			client.Mode = MessageMode.DelimiterBound;
+			client.ReceivedMessage += (s, e) => { receivedMessageCounter++; };
+
+			var sentMessage1 = System.Text.Encoding.UTF8.GetBytes(Guid.NewGuid().ToString());
+			serverConnection.Send(sentMessage1);
+
+			var sentMessage2 = System.Text.Encoding.UTF8.GetBytes(Guid.NewGuid().ToString() + Guid.NewGuid().ToString());
+			serverConnection.Send(sentMessage2);
+
+			Helpers.WaitFor(() => receivedMessageCounter >= 1);
+			var receivedMessage = client.ReceiveMessage();
+			CollectionAssert.AreEqual(sentMessage1, receivedMessage, "First message wasn't correctly received");
+
+			Helpers.WaitFor(() => receivedMessageCounter >= 2);
+			receivedMessage = client.ReceiveMessage();
+			CollectionAssert.AreEqual(sentMessage2, receivedMessage, "Second message wasn't correctly received");
+		}
+
+		[TestMethod]
+		[TestCategory("Connection: Messages")]
+		public void Can_send_messages_prefixed_with_length()
+		{
+			var receivedMessageCounter = 0;
+			Helpers.WaitFor(() => server.Connections.Any());
+			var serverConnection = server.Connections.Single();
+			serverConnection.Mode = MessageMode.PrefixedLength;
+			client.Mode = MessageMode.PrefixedLength;
+			client.ReceivedMessage += (s, e) => { receivedMessageCounter++; };
+
+			var sentMessage1 = System.Text.Encoding.UTF8.GetBytes(Guid.NewGuid().ToString());
+			serverConnection.Send(sentMessage1);
+
+			var sentMessage2 = System.Text.Encoding.UTF8.GetBytes(Guid.NewGuid().ToString() + Guid.NewGuid().ToString());
+			serverConnection.Send(sentMessage2);
+
+			Helpers.WaitFor(() => receivedMessageCounter >= 1);
+			var receivedMessage = client.ReceiveMessage();
+			CollectionAssert.AreEqual(sentMessage1, receivedMessage, "First message wasn't correctly received");
+
+			Helpers.WaitFor(() => receivedMessageCounter >= 2);
+			receivedMessage = client.ReceiveMessage();
+			CollectionAssert.AreEqual(sentMessage2, receivedMessage, "Second message wasn't correctly received");
+		}
+
+		[TestMethod]
+		[TestCategory("Connection: Messages")]
+		public void Can_send_fixed_sized_messages()
+		{
+			var receivedMessageCounter = 0;
+			Helpers.WaitFor(() => server.Connections.Any());
+			var serverConnection = server.Connections.Single();
+			serverConnection.MaxMessageSize = 36;
+			serverConnection.Mode = MessageMode.FixedLength;
+			client.MaxMessageSize = 36;
+			client.Mode = MessageMode.FixedLength;
+			client.ReceivedMessage += (s, e) => { receivedMessageCounter++; };
+
+			var sentMessage1 = System.Text.Encoding.UTF8.GetBytes(Guid.NewGuid().ToString());
+			serverConnection.Send(sentMessage1);
+
+			var sentMessage2 = System.Text.Encoding.UTF8.GetBytes(Guid.NewGuid().ToString());
+			serverConnection.Send(sentMessage2);
+
+			Helpers.WaitFor(() => receivedMessageCounter >= 1);
+			var receivedMessage = client.ReceiveMessage();
+			CollectionAssert.AreEqual(sentMessage1, receivedMessage, "First message wasn't correctly received");
+
+			Helpers.WaitFor(() => receivedMessageCounter >= 2);
+			receivedMessage = client.ReceiveMessage();
+			CollectionAssert.AreEqual(sentMessage2, receivedMessage, "Second message wasn't correctly received");
+		}
+
+		[TestMethod]
+		[ExpectedException(typeof(ArgumentException))]
+		[TestCategory("Connection: Messages")]
+		public void Cant_send_fixed_sized_message_of_wrong_length()
+		{
+			Helpers.WaitFor(() => server.Connections.Any());
+			var serverConnection = server.Connections.Single();
+			serverConnection.MaxMessageSize = 30;
+			serverConnection.Mode = MessageMode.FixedLength;
+
+			var message = System.Text.Encoding.UTF8.GetBytes(Guid.NewGuid().ToString());
+			serverConnection.Send(message);
+		}
 	}
 }

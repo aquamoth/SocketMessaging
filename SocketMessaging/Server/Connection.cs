@@ -50,7 +50,28 @@ namespace SocketMessaging.Server
 		public void Send(byte[] buffer)
 		{
 			Helpers.DebugInfo("#{0}: Sending {1} bytes.", Id, buffer.Length);
-			_socket.Send(buffer);
+			switch (Mode)
+			{
+				case MessageMode.Raw:
+					_socket.Send(buffer);
+					break;
+				case MessageMode.DelimiterBound:
+					_socket.Send(buffer);
+					_socket.Send(new[] { Delimiter });
+					break;
+				case MessageMode.PrefixedLength:
+					var sizeOfMessage = BitConverter.GetBytes(buffer.Length);
+					_socket.Send(sizeOfMessage);
+					_socket.Send(buffer);
+					break;
+				case MessageMode.FixedLength:
+					if (buffer.Length != MaxMessageSize)
+						throw new ArgumentException(string.Format("Message is {0} bytes but expected {1} bytes.", buffer.Length, MaxMessageSize));
+					_socket.Send(buffer);
+					break;
+				default:
+					throw new NotSupportedException();
+			}
 		}
 
 		public byte[] Receive(int maxLength = 0)
