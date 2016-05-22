@@ -299,5 +299,57 @@ namespace SocketMessaging.Tests
 			var message = System.Text.Encoding.UTF8.GetBytes(Guid.NewGuid().ToString());
 			serverConnection.Send(message);
 		}
+
+		[TestMethod]
+		public void Can_send_message_string()
+		{
+			var receivedMessageCounter = 0;
+			Helpers.WaitFor(() => server.Connections.Any());
+			var serverConnection = server.Connections.Single();
+			serverConnection.Delimiter = 0x00;
+			serverConnection.Mode = MessageMode.DelimiterBound;
+			client.Delimiter = 0x00;
+			client.Mode = MessageMode.DelimiterBound;
+			client.ReceivedMessage += (s, e) => { receivedMessageCounter++; };
+
+			var sentMessage = @"¥£€$¢₡₢₣₤₥₦₧₨₩₪₫₭₮₯₹
+ᚠᛇᚻ᛫ᛒᛦᚦ᛫ᚠᚱᚩᚠᚢᚱ᛫ᚠᛁᚱᚪ᛫ᚷᛖᚻᚹᛦᛚᚳᚢᛗ
+ᛋᚳᛖᚪᛚ᛫ᚦᛖᚪᚻ᛫ᛗᚪᚾᚾᚪ᛫ᚷᛖᚻᚹᛦᛚᚳ᛫ᛗᛁᚳᛚᚢᚾ᛫ᚻᛦᛏ᛫ᛞᚫᛚᚪᚾ
+ᚷᛁᚠ᛫ᚻᛖ᛫ᚹᛁᛚᛖ᛫ᚠᚩᚱ᛫ᛞᚱᛁᚻᛏᚾᛖ᛫ᛞᚩᛗᛖᛋ᛫ᚻᛚᛇᛏᚪᚾ᛬
+
+An preost wes on leoden, Laȝamon was ihoten
+He wes Leovenaðes sone -- liðe him be Drihten.
+He wonede at Ernleȝe at æðelen are chirechen,
+Uppen Sevarne staþe, sel þar him þuhte,
+Onfest Radestone, þer he bock radde.
+";
+			serverConnection.Send(sentMessage);
+
+			Helpers.WaitFor(() => receivedMessageCounter >= 1);
+			var receivedMessage = System.Text.Encoding.UTF8.GetString(client.ReceiveMessage());
+			Assert.AreEqual(sentMessage, receivedMessage, "Message wasn't correctly received");
+		}
+
+		[TestMethod]
+		public void Can_send_message_string_in_custom_encoding()
+		{
+			var receivedMessageCounter = 0;
+			Helpers.WaitFor(() => server.Connections.Any());
+			var serverConnection = server.Connections.Single();
+			serverConnection.Delimiter = 0x00;
+			serverConnection.Mode = MessageMode.DelimiterBound;
+			serverConnection.MessageEncoding = System.Text.Encoding.GetEncoding("ISO-8859-1");
+			client.Delimiter = 0x00;
+			client.Mode = MessageMode.DelimiterBound;
+			client.ReceivedMessage += (s, e) => { receivedMessageCounter++; };
+
+			var sentMessage = @"Mitt namn är Mattias Åslund. För övrigt är jag programmerare.";
+			serverConnection.Send(sentMessage);
+
+			Helpers.WaitFor(() => receivedMessageCounter >= 1);
+			var receivedMessage = System.Text.Encoding.GetEncoding("ISO-8859-1").GetString(client.ReceiveMessage());
+			Assert.AreEqual(sentMessage, receivedMessage, "Message wasn't correctly received");
+		}
+
 	}
 }

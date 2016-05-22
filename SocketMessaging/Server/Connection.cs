@@ -45,7 +45,15 @@ namespace SocketMessaging.Server
 			}
 		}
 
+		public Encoding MessageEncoding { get; set; }
+
 		#region Raw
+
+		public void Send(string message)
+		{
+			var buffer = MessageEncoding.GetBytes(message);
+			Send(buffer);
+		}
 
 		public void Send(byte[] buffer)
 		{
@@ -257,6 +265,7 @@ namespace SocketMessaging.Server
 			_socket = socket;
 			MaxMessageSize = 65535; //Same size as default socket window
 			Delimiter = 0x0a; //\n (<CR>) as default delimiter
+			MessageEncoding = Encoding.UTF8;
 			_rawQueue = new FixedSizedQueue(MaxMessageSize);
 		}
 
