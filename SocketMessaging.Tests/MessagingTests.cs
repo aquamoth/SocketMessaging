@@ -36,11 +36,11 @@ namespace SocketMessaging.Tests
 			Helpers.WaitFor(() => server.Connections.Any());
 			Assert.AreEqual(MessageMode.Raw, client.Mode, "Client starts in raw message mode");
 			Assert.AreEqual(MessageMode.Raw, server.Connections.Single().Mode, "Server starts in raw message mode");
-			client.Mode = MessageMode.DelimiterBound;
+			client.SetMode(MessageMode.DelimiterBound);
 			Assert.AreEqual(MessageMode.DelimiterBound, client.Mode, "Client mode should be DelimiterBound");
-			client.Mode = MessageMode.PrefixedLength;
+			client.SetMode(MessageMode.PrefixedLength);
 			Assert.AreEqual(MessageMode.PrefixedLength, client.Mode, "Client mode should be PrefixedLength");
-			client.Mode = MessageMode.FixedLength;
+			client.SetMode(MessageMode.FixedLength);
 			Assert.AreEqual(MessageMode.FixedLength, client.Mode, "Client mode should be FixedLength");
 
 			client.MaxMessageSize = 10;
@@ -61,15 +61,15 @@ namespace SocketMessaging.Tests
 		{
 			byte[] buffer;
 
-			client.Mode = MessageMode.DelimiterBound;
+			client.SetMode(MessageMode.DelimiterBound);
 			buffer = client.ReceiveMessage();
 			Assert.IsNull(buffer, "Connection should return null when there is no delimited message");
 
-			client.Mode = MessageMode.FixedLength;
+			client.SetMode(MessageMode.FixedLength);
 			buffer = client.ReceiveMessage();
 			Assert.IsNull(buffer, "Connection should return null when there is no fixed length message");
 
-			client.Mode = MessageMode.PrefixedLength;
+			client.SetMode(MessageMode.PrefixedLength);
 			buffer = client.ReceiveMessage();
 			Assert.IsNull(buffer, "Connection should return null when there is no prefixed length message");
 		}
@@ -82,7 +82,7 @@ namespace SocketMessaging.Tests
 
 			Assert.AreEqual(DEFAULT_MAX_MESSAGE_SIZE, client.MaxMessageSize, "Connection should have a sane default max message size");
 			client.MaxMessageSize = 10;
-			client.Mode = MessageMode.FixedLength;
+			client.SetMode(MessageMode.FixedLength);
 			client.ReceivedMessage += (s, e) => { receivedMessageCounter++; };
 
 			Helpers.WaitFor(() => server.Connections.Any());
@@ -125,7 +125,7 @@ namespace SocketMessaging.Tests
 			Helpers.WaitFor(() => server.Connections.Any());
 			var serverConnection = server.Connections.Single();
 
-			client.Mode = MessageMode.DelimiterBound;
+			client.SetMode(MessageMode.DelimiterBound);
 			client.ReceivedMessage += (s, e) => { receivedMessageCounter++; };
 
 			var delimiter = new byte[] { 0x0a };
@@ -162,7 +162,7 @@ namespace SocketMessaging.Tests
 			Helpers.WaitFor(() => server.Connections.Any());
 			var serverConnection = server.Connections.Single();
 
-			client.Mode = MessageMode.DelimiterBound;
+			client.SetMode(MessageMode.DelimiterBound);
 			client.MaxMessageSize = 10;
 			client.ReceivedMessage += (s, e) => { receivedMessageCounter++; };
 
@@ -184,7 +184,7 @@ namespace SocketMessaging.Tests
 			Helpers.WaitFor(() => server.Connections.Any());
 			var serverConnection = server.Connections.Single();
 
-			client.Mode = MessageMode.PrefixedLength;
+			client.SetMode(MessageMode.PrefixedLength);
 			client.ReceivedMessage += (s, e) => { receivedMessageCounter++; };
 
 			var sentMessage1 = System.Text.Encoding.UTF8.GetBytes(Guid.NewGuid().ToString());
@@ -220,7 +220,7 @@ namespace SocketMessaging.Tests
 
 			client.MaxMessageSize = sentBuffer.Length;
 			client.MessageEncoding = customEncoding;
-			client.Mode = MessageMode.FixedLength;
+			client.SetMode(MessageMode.FixedLength);
 			client.ReceivedMessage += (s, e) => { receivedMessageCounter++; };
 
 			serverConnection.Send(sentBuffer);
@@ -237,8 +237,8 @@ namespace SocketMessaging.Tests
 			var receivedMessageCounter = 0;
 			Helpers.WaitFor(() => server.Connections.Any());
 			var serverConnection = server.Connections.Single();
-			serverConnection.Mode = MessageMode.DelimiterBound;
-			client.Mode = MessageMode.DelimiterBound;
+			serverConnection.SetMode(MessageMode.DelimiterBound);
+			client.SetMode(MessageMode.DelimiterBound);
 			client.ReceivedMessage += (s, e) => { receivedMessageCounter++; };
 
 			var sentMessage1 = System.Text.Encoding.UTF8.GetBytes(Guid.NewGuid().ToString());
@@ -263,8 +263,8 @@ namespace SocketMessaging.Tests
 			var receivedMessageCounter = 0;
 			Helpers.WaitFor(() => server.Connections.Any());
 			var serverConnection = server.Connections.Single();
-			serverConnection.Mode = MessageMode.PrefixedLength;
-			client.Mode = MessageMode.PrefixedLength;
+			serverConnection.SetMode(MessageMode.PrefixedLength);
+			client.SetMode(MessageMode.PrefixedLength);
 			client.ReceivedMessage += (s, e) => { receivedMessageCounter++; };
 
 			var sentMessage1 = System.Text.Encoding.UTF8.GetBytes(Guid.NewGuid().ToString());
@@ -290,9 +290,9 @@ namespace SocketMessaging.Tests
 			Helpers.WaitFor(() => server.Connections.Any());
 			var serverConnection = server.Connections.Single();
 			serverConnection.MaxMessageSize = 36;
-			serverConnection.Mode = MessageMode.FixedLength;
+			serverConnection.SetMode(MessageMode.FixedLength);
 			client.MaxMessageSize = 36;
-			client.Mode = MessageMode.FixedLength;
+			client.SetMode(MessageMode.FixedLength);
 			client.ReceivedMessage += (s, e) => { receivedMessageCounter++; };
 
 			var sentMessage1 = System.Text.Encoding.UTF8.GetBytes(Guid.NewGuid().ToString());
@@ -318,7 +318,7 @@ namespace SocketMessaging.Tests
 			Helpers.WaitFor(() => server.Connections.Any());
 			var serverConnection = server.Connections.Single();
 			serverConnection.MaxMessageSize = 30;
-			serverConnection.Mode = MessageMode.FixedLength;
+			serverConnection.SetMode(MessageMode.FixedLength);
 
 			var message = System.Text.Encoding.UTF8.GetBytes(Guid.NewGuid().ToString());
 			serverConnection.Send(message);
@@ -331,9 +331,9 @@ namespace SocketMessaging.Tests
 			Helpers.WaitFor(() => server.Connections.Any());
 			var serverConnection = server.Connections.Single();
 			serverConnection.Delimiter = 0x00;
-			serverConnection.Mode = MessageMode.DelimiterBound;
+			serverConnection.SetMode(MessageMode.DelimiterBound);
 			client.Delimiter = 0x00;
-			client.Mode = MessageMode.DelimiterBound;
+			client.SetMode(MessageMode.DelimiterBound);
 			client.ReceivedMessage += (s, e) => { receivedMessageCounter++; };
 
 			var sentMessage = @"¥£€$¢₡₢₣₤₥₦₧₨₩₪₫₭₮₯₹
@@ -361,10 +361,10 @@ Onfest Radestone, þer he bock radde.
 			Helpers.WaitFor(() => server.Connections.Any());
 			var serverConnection = server.Connections.Single();
 			serverConnection.Delimiter = 0x00;
-			serverConnection.Mode = MessageMode.DelimiterBound;
+			serverConnection.SetMode(MessageMode.DelimiterBound);
 			serverConnection.MessageEncoding = System.Text.Encoding.GetEncoding("ISO-8859-1");
 			client.Delimiter = 0x00;
-			client.Mode = MessageMode.DelimiterBound;
+			client.SetMode(MessageMode.DelimiterBound);
 			client.ReceivedMessage += (s, e) => { receivedMessageCounter++; };
 
 			var sentMessage = @"Mitt namn är Mattias Åslund. För övrigt är jag programmerare.";
@@ -378,26 +378,118 @@ Onfest Radestone, þer he bock radde.
 		[TestMethod]
 		public void Sends_messages_with_escaped_delimiters()
 		{
-			var sentMessage = @"Message! part 1|part 2";
-			var messageDelimiter = client.MessageEncoding.GetBytes("|").Single();
-
 			var receivedMessageCounter = 0;
 			Helpers.WaitFor(() => server.Connections.Any());
 			var serverConnection = server.Connections.Single();
-			serverConnection.Escapecode = client.MessageEncoding.GetBytes("!").Single();
-			serverConnection.Delimiter = messageDelimiter;
-			serverConnection.Mode = MessageMode.DelimiterBound;
-			client.Escapecode = client.MessageEncoding.GetBytes("!").Single();
-			client.Delimiter = messageDelimiter;
-			client.Mode = MessageMode.DelimiterBound;
 			client.ReceivedMessage += (s, e) => { receivedMessageCounter++; };
+			serverConnection.SetMode(MessageMode.DelimiterBound);
+			client.SetMode(MessageMode.DelimiterBound);
 
-			serverConnection.Send(sentMessage);
-
+			var sentMessage1 = @"Message 1! part 1|part 2";
+			var messageDelimiter1 = client.MessageEncoding.GetBytes("|").Single();
+			var escapeCode1 = client.MessageEncoding.GetBytes("!").Single();
+			serverConnection.Escapecode = escapeCode1;
+			serverConnection.Delimiter = messageDelimiter1;
+			client.Escapecode = escapeCode1;
+			client.Delimiter = messageDelimiter1;
+			serverConnection.Send(sentMessage1);
 			Helpers.WaitFor(() => receivedMessageCounter >= 1);
-			var receivedMessage = client.ReceiveMessageString();
-			Assert.AreEqual(sentMessage, receivedMessage, "First message wasn't correctly received");
+			var receivedMessage1 = client.ReceiveMessageString();
+			Assert.AreEqual(sentMessage1, receivedMessage1, "First message wasn't correctly received");
+
+
+
+			receivedMessageCounter = 0;
+			var sentMessage2 = @"Message 2! part 1|part 2";
+			var messageDelimiter2 = client.MessageEncoding.GetBytes("M").Single();
+			var escapeCode2 = client.MessageEncoding.GetBytes("1").Single();
+			serverConnection.Escapecode = escapeCode2;
+			serverConnection.Delimiter = messageDelimiter2;
+			client.Escapecode = escapeCode2;
+			client.Delimiter = messageDelimiter2;
+			serverConnection.Send(sentMessage2);
+			Helpers.WaitFor(() => receivedMessageCounter >= 1);
+			var receivedMessage2 = client.ReceiveMessageString();
+			Assert.AreEqual(sentMessage2, receivedMessage2, "Second message wasn't correctly received");
 		}
 
+		//[TestMethod]
+		//public void Can_send_and_receive_a_mix_of_message_types()
+		//{
+		//	var rnd = new Random();
+
+		//	var receivedMessageCounter = 0;
+		//	client.ReceivedMessage += (s, e) => { receivedMessageCounter++; };
+
+		//	Helpers.WaitFor(() => server.Connections.Any());
+		//	var serverConnection = server.Connections.Single();
+
+		//	//Send a raw chunk
+		//	var sentBuffer1 = new byte[20];
+		//	rnd.NextBytes(sentBuffer1);
+		//	serverConnection.Send(sentBuffer1);
+
+		//	//Send a fixes length chunk
+		//	var sentBuffer2 = new byte[50];
+		//	rnd.NextBytes(sentBuffer2);
+		//	serverConnection.MaxMessageSize = sentBuffer2.Length;
+		//	serverConnection.SetMode(MessageMode.FixedLength);
+		//	serverConnection.Send(sentBuffer2);
+
+		//	//Send a delimited message
+		//	var sentMessage3 = "Jag är programmerare.\nSå det så!\nOch rad tre";
+		//	serverConnection.SetMode(MessageMode.DelimiterBound);
+		//	serverConnection.Send(sentMessage3);
+
+		//	//Send a prefix-length message
+		//	var sentMessage4 = "A prefix-length delimited message\nWith two rows.";
+		//	serverConnection.SetMode(MessageMode.PrefixedLength);
+		//	serverConnection.Send(sentMessage4);
+
+		//	//Finish off with yet another raw chunk
+		//	var sentBuffer5 = new byte[10];
+		//	rnd.NextBytes(sentBuffer5);
+		//	serverConnection.Send(sentBuffer5);
+
+
+		//	//Receive a raw chunk
+		//	Helpers.WaitFor(() => client.Available >= sentBuffer1.Length);
+		//	var receivedBuffer1 = client.Receive(sentBuffer1.Length);
+		//	CollectionAssert.AreEqual(sentBuffer1, receivedBuffer1, "First chunk differs.");
+
+		//	//Receive a fixes length chunk
+		//	receivedMessageCounter = 0;
+		//	client.MaxMessageSize = sentBuffer2.Length;
+		//	client.SetMode(MessageMode.FixedLength);
+		//	Helpers.WaitFor(() => receivedMessageCounter >= 1);
+		//	Assert.IsTrue(receivedMessageCounter >= 1, "Changing Mode should retrigger receive-events when receive-queue is not empty");
+		//	var receivedBuffer2 = client.ReceiveMessage();
+		//	client.MaxMessageSize = 65535;
+		//	CollectionAssert.AreEqual(sentBuffer2, receivedBuffer2, "Second chunk differs.");
+
+		//	//Receive a delimited message
+		//	receivedMessageCounter = 0;
+		//	client.SetMode(MessageMode.DelimiterBound);
+		//	Helpers.WaitFor(() => receivedMessageCounter >= 1);
+		//	Assert.IsTrue(receivedMessageCounter >= 1, "Changing Mode should retrigger receive-events when receive-queue is not empty");
+		//	var receivedMessage3 = client.ReceiveMessageString();
+		//	Assert.AreEqual(sentMessage3, receivedMessage3, "Third message differs.");
+
+		//	//Receive a prefix-length message
+		//	receivedMessageCounter = 0;
+		//	client.SetMode(MessageMode.PrefixedLength);
+		//	Helpers.WaitFor(() => receivedMessageCounter >= 1);
+		//	Assert.IsTrue(receivedMessageCounter >= 1, "Changing Mode should retrigger receive-events when receive-queue is not empty");
+		//	var receivedMessage4 = client.ReceiveMessageString();
+		//	Assert.AreEqual(sentMessage4, receivedMessage4, "Fourth message differs.");
+
+		//	//Finish off receiving yet another raw chunk
+		//	client.SetMode(MessageMode.Raw);
+		//	Helpers.WaitFor(() => client.Available >= sentBuffer5.Length);
+		//	var receivedBuffer5 = client.Receive(sentBuffer5.Length);
+		//	CollectionAssert.AreEqual(sentBuffer5, receivedBuffer5, "Last raw chunk differs.");
+
+		//	Assert.AreEqual(0, client.Available, "The receive queue should be empty after last raw chunk is read.");
+		//}
 	}
 }

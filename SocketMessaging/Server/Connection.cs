@@ -49,7 +49,15 @@ namespace SocketMessaging.Server
 
 		public int MaxMessageSize { get; set; }
 
-		public MessageMode Mode { get; set; }
+		public MessageMode Mode { get; protected set; }
+		public void SetMode(MessageMode newMode)
+		{
+			Mode = newMode;
+			var numberOfNewMessages = numberOfNewMessagesInRawQueue(_rawQueue.Peek(0, _rawQueue.Count));
+			for (var i = 0; i < numberOfNewMessages; i++)
+				OnReceivedMessage(EventArgs.Empty);
+
+		}
 
 		public byte Delimiter { get; set; }
 
@@ -66,14 +74,12 @@ namespace SocketMessaging.Server
 					_socket.Send(buffer);
 					break;
 				case MessageMode.DelimiterBound:
-					var escapeCode = MessageEncoding.GetBytes("!").Single();
-
 					var encodedBuffer = buffer.SelectMany(x =>
 					{
-						if (x == escapeCode)
-							return new[] { escapeCode, escapeCode };
+						if (x == Escapecode)
+							return new[] { Escapecode, Escapecode };
 						if (x == Delimiter)
-							return new[] { escapeCode, Delimiter };
+							return new[] { Escapecode, Delimiter };
 						return new[] { x };
 					}).ToArray();
 
