@@ -413,83 +413,84 @@ Onfest Radestone, þer he bock radde.
 			Assert.AreEqual(sentMessage2, receivedMessage2, "Second message wasn't correctly received");
 		}
 
-		//[TestMethod]
-		//public void Can_send_and_receive_a_mix_of_message_types()
-		//{
-		//	var rnd = new Random();
+		[TestMethod]
+		public void Can_send_and_receive_a_mix_of_message_types()
+		{
+			var rnd = new Random();
 
-		//	var receivedMessageCounter = 0;
-		//	client.ReceivedMessage += (s, e) => { receivedMessageCounter++; };
+			var receivedMessageCounter = 0;
+			client.ReceivedMessage += (s, e) => { receivedMessageCounter++; };
 
-		//	Helpers.WaitFor(() => server.Connections.Any());
-		//	var serverConnection = server.Connections.Single();
+			Helpers.WaitFor(() => server.Connections.Any());
+			var serverConnection = server.Connections.Single();
 
-		//	//Send a raw chunk
-		//	var sentBuffer1 = new byte[20];
-		//	rnd.NextBytes(sentBuffer1);
-		//	serverConnection.Send(sentBuffer1);
+			//Send a raw chunk
+			var sentBuffer1 = new byte[20];
+			rnd.NextBytes(sentBuffer1);
+			serverConnection.Send(sentBuffer1);
 
-		//	//Send a fixes length chunk
-		//	var sentBuffer2 = new byte[50];
-		//	rnd.NextBytes(sentBuffer2);
-		//	serverConnection.MaxMessageSize = sentBuffer2.Length;
-		//	serverConnection.SetMode(MessageMode.FixedLength);
-		//	serverConnection.Send(sentBuffer2);
+			//Send a fixes length chunk
+			var sentBuffer2 = new byte[50];
+			rnd.NextBytes(sentBuffer2);
+			serverConnection.MaxMessageSize = sentBuffer2.Length;
+			serverConnection.SetMode(MessageMode.FixedLength);
+			serverConnection.Send(sentBuffer2);
 
-		//	//Send a delimited message
-		//	var sentMessage3 = "Jag är programmerare.\nSå det så!\nOch rad tre";
-		//	serverConnection.SetMode(MessageMode.DelimiterBound);
-		//	serverConnection.Send(sentMessage3);
+			//Send a delimited message
+			var sentMessage3 = "Jag är programmerare.\nSå det så!\nOch rad tre";
+			serverConnection.SetMode(MessageMode.DelimiterBound);
+			serverConnection.Send(sentMessage3);
 
-		//	//Send a prefix-length message
-		//	var sentMessage4 = "A prefix-length delimited message\nWith two rows.";
-		//	serverConnection.SetMode(MessageMode.PrefixedLength);
-		//	serverConnection.Send(sentMessage4);
+			//Send a prefix-length message
+			var sentMessage4 = "A prefix-length delimited message\nWith two rows.";
+			serverConnection.SetMode(MessageMode.PrefixedLength);
+			serverConnection.Send(sentMessage4);
 
-		//	//Finish off with yet another raw chunk
-		//	var sentBuffer5 = new byte[10];
-		//	rnd.NextBytes(sentBuffer5);
-		//	serverConnection.Send(sentBuffer5);
+			//Finish off with yet another raw chunk
+			var sentBuffer5 = new byte[10];
+			rnd.NextBytes(sentBuffer5);
+			serverConnection.SetMode(MessageMode.Raw);
+			serverConnection.Send(sentBuffer5);
 
 
-		//	//Receive a raw chunk
-		//	Helpers.WaitFor(() => client.Available >= sentBuffer1.Length);
-		//	var receivedBuffer1 = client.Receive(sentBuffer1.Length);
-		//	CollectionAssert.AreEqual(sentBuffer1, receivedBuffer1, "First chunk differs.");
+			//Receive a raw chunk
+			Helpers.WaitFor(() => client.Available >= sentBuffer1.Length);
+			var receivedBuffer1 = client.Receive(sentBuffer1.Length);
+			CollectionAssert.AreEqual(sentBuffer1, receivedBuffer1, "First chunk differs.");
 
-		//	//Receive a fixes length chunk
-		//	receivedMessageCounter = 0;
-		//	client.MaxMessageSize = sentBuffer2.Length;
-		//	client.SetMode(MessageMode.FixedLength);
-		//	Helpers.WaitFor(() => receivedMessageCounter >= 1);
-		//	Assert.IsTrue(receivedMessageCounter >= 1, "Changing Mode should retrigger receive-events when receive-queue is not empty");
-		//	var receivedBuffer2 = client.ReceiveMessage();
-		//	client.MaxMessageSize = 65535;
-		//	CollectionAssert.AreEqual(sentBuffer2, receivedBuffer2, "Second chunk differs.");
+			//Receive a fixes length chunk
+			receivedMessageCounter = 0;
+			client.MaxMessageSize = sentBuffer2.Length;
+			client.SetMode(MessageMode.FixedLength);
+			Helpers.WaitFor(() => receivedMessageCounter >= 1);
+			Assert.IsTrue(receivedMessageCounter >= 1, "Changing Mode should retrigger receive-events when receive-queue is not empty");
+			var receivedBuffer2 = client.ReceiveMessage();
+			client.MaxMessageSize = 65535;
+			CollectionAssert.AreEqual(sentBuffer2, receivedBuffer2, "Second chunk differs.");
 
-		//	//Receive a delimited message
-		//	receivedMessageCounter = 0;
-		//	client.SetMode(MessageMode.DelimiterBound);
-		//	Helpers.WaitFor(() => receivedMessageCounter >= 1);
-		//	Assert.IsTrue(receivedMessageCounter >= 1, "Changing Mode should retrigger receive-events when receive-queue is not empty");
-		//	var receivedMessage3 = client.ReceiveMessageString();
-		//	Assert.AreEqual(sentMessage3, receivedMessage3, "Third message differs.");
+			//Receive a delimited message
+			receivedMessageCounter = 0;
+			client.SetMode(MessageMode.DelimiterBound);
+			Helpers.WaitFor(() => receivedMessageCounter >= 1);
+			Assert.IsTrue(receivedMessageCounter >= 1, "Changing Mode should retrigger receive-events when receive-queue is not empty");
+			var receivedMessage3 = client.ReceiveMessageString();
+			Assert.AreEqual(sentMessage3, receivedMessage3, "Third message differs.");
 
-		//	//Receive a prefix-length message
-		//	receivedMessageCounter = 0;
-		//	client.SetMode(MessageMode.PrefixedLength);
-		//	Helpers.WaitFor(() => receivedMessageCounter >= 1);
-		//	Assert.IsTrue(receivedMessageCounter >= 1, "Changing Mode should retrigger receive-events when receive-queue is not empty");
-		//	var receivedMessage4 = client.ReceiveMessageString();
-		//	Assert.AreEqual(sentMessage4, receivedMessage4, "Fourth message differs.");
+			//Receive a prefix-length message
+			receivedMessageCounter = 0;
+			client.SetMode(MessageMode.PrefixedLength);
+			Helpers.WaitFor(() => receivedMessageCounter >= 1);
+			Assert.IsTrue(receivedMessageCounter >= 1, "Changing Mode should retrigger receive-events when receive-queue is not empty");
+			var receivedMessage4 = client.ReceiveMessageString();
+			Assert.AreEqual(sentMessage4, receivedMessage4, "Fourth message differs.");
 
-		//	//Finish off receiving yet another raw chunk
-		//	client.SetMode(MessageMode.Raw);
-		//	Helpers.WaitFor(() => client.Available >= sentBuffer5.Length);
-		//	var receivedBuffer5 = client.Receive(sentBuffer5.Length);
-		//	CollectionAssert.AreEqual(sentBuffer5, receivedBuffer5, "Last raw chunk differs.");
+			//Finish off receiving yet another raw chunk
+			client.SetMode(MessageMode.Raw);
+			Helpers.WaitFor(() => client.Available >= sentBuffer5.Length);
+			var receivedBuffer5 = client.Receive(sentBuffer5.Length);
+			CollectionAssert.AreEqual(sentBuffer5, receivedBuffer5, "Last raw chunk differs.");
 
-		//	Assert.AreEqual(0, client.Available, "The receive queue should be empty after last raw chunk is read.");
-		//}
+			Assert.AreEqual(0, client.Available, "The receive queue should be empty after last raw chunk is read.");
+		}
 	}
 }

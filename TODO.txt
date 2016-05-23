@@ -4,10 +4,6 @@ User stories
 
 Engineering tasks
 =================
-o Changing message mode retriggers new message events
-	o Switching message mode affects the unread stream
-o Data read from raw stream is removed from the messages-stream
-o Data read as a message is removed from the raw stream
 o Messages are limited by MaxMessageSize. Throws an exception if a message is read that is larger than max size
 o Reading the raw stream is not limited by MaxMessageSize
 o MaxMessageSize can be increased or lowered during communication and affects the unread stream
@@ -22,6 +18,7 @@ o Possible bug. Don't think this happens any more:
 o Send should take an IEnumerable<byte> instead of byte[]
 o Cant use message delimiter as escape code
 o Write proper tests for Connection.stripEscapeCodes()
+o Change setters for Delimiter and Escapecode to methods that triggers MessageReceived events just like SetMode() does
 
 
 
