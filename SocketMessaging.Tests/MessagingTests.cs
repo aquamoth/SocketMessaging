@@ -208,6 +208,30 @@ namespace SocketMessaging.Tests
 
 		[TestMethod]
 		[TestCategory("Connection: Messages")]
+		public void Can_receive_message_string_with_escaped_delimiters()
+		{
+			var customEncoding = System.Text.Encoding.GetEncoding("ISO-8859-1");
+			var sentMessage = @"Mitt namn är Mattias Åslund. För övrigt är jag programmerare.";
+			var sentBuffer = customEncoding.GetBytes(sentMessage);
+
+			var receivedMessageCounter = 0;
+			Helpers.WaitFor(() => server.Connections.Any());
+			var serverConnection = server.Connections.Single();
+
+			client.MaxMessageSize = sentBuffer.Length;
+			client.MessageEncoding = customEncoding;
+			client.Mode = MessageMode.FixedLength;
+			client.ReceivedMessage += (s, e) => { receivedMessageCounter++; };
+
+			serverConnection.Send(sentBuffer);
+
+			Helpers.WaitFor(() => receivedMessageCounter >= 1);
+			var receivedMessage = client.ReceiveMessageString();
+			Assert.AreEqual(sentMessage, receivedMessage, "Message wasn't correctly received");
+		}
+
+		[TestMethod]
+		[TestCategory("Connection: Messages")]
 		public void Can_send_delimited_messages()
 		{
 			var receivedMessageCounter = 0;
@@ -352,27 +376,27 @@ Onfest Radestone, þer he bock radde.
 		}
 
 		[TestMethod]
-		[TestCategory("Connection: Messages")]
-		public void Can_receive_message_as_encoded_string()
+		public void Sends_messages_with_escaped_delimiters()
 		{
-			var customEncoding = System.Text.Encoding.GetEncoding("ISO-8859-1");
-			var sentMessage = @"Mitt namn är Mattias Åslund. För övrigt är jag programmerare.";
-			var sentBuffer = customEncoding.GetBytes(sentMessage);
+			var sentMessage = @"Message! part 1|part 2";
+			var messageDelimiter = client.MessageEncoding.GetBytes("|").Single();
 
 			var receivedMessageCounter = 0;
 			Helpers.WaitFor(() => server.Connections.Any());
 			var serverConnection = server.Connections.Single();
-
-			client.MaxMessageSize = sentBuffer.Length;
-			client.MessageEncoding = customEncoding;
-			client.Mode = MessageMode.FixedLength;
+			serverConnection.Escapecode = client.MessageEncoding.GetBytes("!").Single();
+			serverConnection.Delimiter = messageDelimiter;
+			serverConnection.Mode = MessageMode.DelimiterBound;
+			client.Escapecode = client.MessageEncoding.GetBytes("!").Single();
+			client.Delimiter = messageDelimiter;
+			client.Mode = MessageMode.DelimiterBound;
 			client.ReceivedMessage += (s, e) => { receivedMessageCounter++; };
 
-			serverConnection.Send(sentBuffer);
+			serverConnection.Send(sentMessage);
 
 			Helpers.WaitFor(() => receivedMessageCounter >= 1);
 			var receivedMessage = client.ReceiveMessageString();
-			Assert.AreEqual(sentMessage, receivedMessage, "Message wasn't correctly received");
+			Assert.AreEqual(sentMessage, receivedMessage, "First message wasn't correctly received");
 		}
 
 	}

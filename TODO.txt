@@ -4,8 +4,6 @@ User stories
 
 Engineering tasks
 =================
-* Can send and receive string messages with specific encoding
-o Messages with delimiter inside gets properly encoded
 o Changing message mode retriggers new message events
 	o Switching message mode affects the unread stream
 o Data read from raw stream is removed from the messages-stream
@@ -22,6 +20,8 @@ o Possible bug. Don't think this happens any more:
 	Read entire queue so _readIndex = _writeIndex (= at end of queue). 
 	Write something and then read without crashing.
 o Send should take an IEnumerable<byte> instead of byte[]
+o Cant use message delimiter as escape code
+o Write proper tests for Connection.stripEscapeCodes()
 
 
 

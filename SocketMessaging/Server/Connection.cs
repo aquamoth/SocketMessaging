@@ -53,6 +53,8 @@ namespace SocketMessaging.Server
 
 		public byte Delimiter { get; set; }
 
+		public byte Escapecode { get; set; }
+
 		public Encoding MessageEncoding { get; set; }
 
 		public void Send(byte[] buffer)
@@ -64,7 +66,18 @@ namespace SocketMessaging.Server
 					_socket.Send(buffer);
 					break;
 				case MessageMode.DelimiterBound:
-					_socket.Send(buffer);
+					var escapeCode = MessageEncoding.GetBytes("!").Single();
+
+					var encodedBuffer = buffer.SelectMany(x =>
+					{
+						if (x == escapeCode)
+							return new[] { escapeCode, escapeCode };
+						if (x == Delimiter)
+							return new[] { escapeCode, Delimiter };
+						return new[] { x };
+					}).ToArray();
+
+					_socket.Send(encodedBuffer);
 					_socket.Send(new[] { Delimiter });
 					break;
 				case MessageMode.PrefixedLength:
@@ -101,10 +114,17 @@ namespace SocketMessaging.Server
 			{
 				case MessageMode.DelimiterBound:
 					{
-						var buffer = _rawQueue.ReadUntil(Delimiter, MaxMessageSize);
-						if (buffer == null)
-							return null;
-						return buffer.Take(buffer.Length - 1).ToArray();
+						var buffer = new byte[0].AsEnumerable();
+						var inEscapeMode = false;
+						do
+						{
+							var readBuffer = _rawQueue.ReadUntil(Delimiter, MaxMessageSize);
+							if (readBuffer == null)
+								return null;
+							var escapedBuffer = stripEscapeCodes(readBuffer, ref inEscapeMode);
+							buffer = buffer.Concat(escapedBuffer);
+						} while (buffer.Last() == Delimiter);
+						return buffer.ToArray();
 					}
 
 				case MessageMode.FixedLength:
@@ -252,6 +272,51 @@ namespace SocketMessaging.Server
 			}
 		}
 
+		internal byte[] stripEscapeCodes(byte[] message, ref bool inEscapeMode)
+		{
+			IEnumerable<byte> escapedMessage = new byte[0];
+
+			var startIndex = 0;
+			for (var endIndex = 0; endIndex < message.Length; endIndex++)
+			{
+				var token = message[endIndex];
+				if (inEscapeMode)
+				{
+					if (token == Escapecode)
+					{
+						escapedMessage = escapedMessage.Concat(message.Skip(startIndex).Take(endIndex - startIndex));
+						startIndex = endIndex + 1;
+					}
+					else if (token == Delimiter)
+					{
+						escapedMessage = escapedMessage.Concat(message.Skip(startIndex).Take(endIndex - startIndex - 1));
+						startIndex = endIndex;
+					}
+					inEscapeMode = false;
+				}
+				else
+				{
+					if (token == Delimiter)
+					{
+						if (endIndex != message.Length - 1)
+							throw new ApplicationException();
+						escapedMessage = escapedMessage.Concat(message.Skip(startIndex).Take(endIndex - startIndex));
+						startIndex = endIndex + 1;
+					}
+					else if (token == Escapecode)
+					{
+						inEscapeMode = true;
+					}
+					else
+					{
+						//Continue processing
+					}
+				}
+			}
+			escapedMessage = escapedMessage.Concat(message.Skip(startIndex));
+			return escapedMessage.ToArray();
+		}
+
 		#endregion Internal logic
 
 		internal Connection(int id, Socket socket)
@@ -260,6 +325,7 @@ namespace SocketMessaging.Server
 			_socket = socket;
 			MaxMessageSize = 65535; //Same size as default socket window
 			Delimiter = 0x0a; //\n (<CR>) as default delimiter
+			Escapecode = Encoding.UTF8.GetBytes(@"\").Single();
 			MessageEncoding = Encoding.UTF8;
 			_rawQueue = new FixedSizedQueue(MaxMessageSize);
 		}
