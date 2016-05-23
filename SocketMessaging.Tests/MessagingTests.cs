@@ -492,5 +492,41 @@ Onfest Radestone, þer he bock radde.
 
 			Assert.AreEqual(0, client.Available, "The receive queue should be empty after last raw chunk is read.");
 		}
+
+		[TestMethod]
+		[ExpectedException(typeof(InvalidOperationException))]
+		[TestCategory("Connection: Messages")]
+		public void Receiving_delimited_message_larger_than_MaxMessageSize_throws_exception()
+		{
+			var message = "This is a long message.";
+
+			Helpers.WaitFor(() => server.Connections.Any());
+			var serverConnection = server.Connections.Single();
+			serverConnection.SetMode(MessageMode.DelimiterBound);
+			serverConnection.Send(message);
+
+			client.MaxMessageSize = 10;
+			client.SetMode(MessageMode.DelimiterBound);
+			Helpers.WaitFor(() => client.Available >= message.Length);
+			var receivedMessage = client.ReceiveMessageString();
+		}
+
+		[TestMethod]
+		[ExpectedException(typeof(InvalidOperationException))]
+		[TestCategory("Connection: Messages")]
+		public void Receiving_length_prefixed_message_larger_than_MaxMessageSize_throws_exception()
+		{
+			var message = "This is a long message.";
+
+			Helpers.WaitFor(() => server.Connections.Any());
+			var serverConnection = server.Connections.Single();
+			serverConnection.SetMode(MessageMode.PrefixedLength);
+			serverConnection.Send(message);
+
+			client.MaxMessageSize = 10;
+			client.SetMode(MessageMode.PrefixedLength);
+			Helpers.WaitFor(() => client.Available >= message.Length);
+			var receivedMessage = client.ReceiveMessageString();
+		}
 	}
 }

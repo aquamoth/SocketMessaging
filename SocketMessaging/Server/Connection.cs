@@ -126,7 +126,12 @@ namespace SocketMessaging.Server
 						{
 							var readBuffer = _rawQueue.ReadUntil(Delimiter, MaxMessageSize);
 							if (readBuffer == null)
+							{
+								if (Available >= MaxMessageSize)
+									throw new InvalidOperationException("Message is larger than max allowed message size.");
 								return null;
+							}
+
 							var escapedBuffer = stripEscapeCodes(readBuffer, ref inEscapeMode);
 							buffer = buffer.Concat(escapedBuffer);
 						} while (buffer.Last() == Delimiter);
@@ -149,6 +154,8 @@ namespace SocketMessaging.Server
 							return null;
 						
 						var messageSize = BitConverter.ToInt32(_rawQueue.Peek(0, 4), 0);
+						if (messageSize > MaxMessageSize)
+							throw new InvalidOperationException("Message is larger than max allowed message size.");
 						if (messageSize > _rawQueue.Count + 4)
 							return null;
 
