@@ -110,11 +110,30 @@ namespace SocketMessaging.Tests
 
 		[TestMethod]
 		[TestCategory("Connection: Messages")]
-		public void Can_switch_delimiter()
+		public void Changing_delimiter_retriggers_received_messages()
 		{
+			var receivedMessageCounter = 0;
+			client.ReceivedMessage += (s, e) => { receivedMessageCounter++; };
+			client.SetMode(MessageMode.DelimiterBound);
 			CollectionAssert.AreEqual(new byte[] { 0x0a }, client.Delimiter);
-			client.Delimiter = new byte[] { 0x20 };
+
+			Helpers.WaitFor(() => server.Connections.Any());
+			var serverConnection = server.Connections.Single();
+			serverConnection.SetDelimiter(new byte[] { 0x20 });
+			serverConnection.SetMode(MessageMode.DelimiterBound);
+
+			var sentMessage = Guid.NewGuid().ToString();
+			serverConnection.Send(sentMessage);
+
+			Helpers.WaitFor(() => client.Available > 0);
+			receivedMessageCounter = 0;
+			client.SetDelimiter(serverConnection.Delimiter);
 			CollectionAssert.AreEqual(new byte[] { 0x20 }, client.Delimiter);
+
+			Helpers.WaitFor(() => receivedMessageCounter >= 1);
+			Assert.AreEqual(1, receivedMessageCounter, "Client should trigger one message received event");
+			var receivedMessage = client.ReceiveMessageString();
+			Assert.AreEqual(sentMessage, receivedMessage, "First message wasn't correctly received");
 		}
 
 		[TestMethod]
@@ -161,7 +180,7 @@ namespace SocketMessaging.Tests
 		{
 			Helpers.WaitFor(() => server.Connections.Any());
 			var serverConnection = server.Connections.Single();
-			serverConnection.Delimiter = new byte[0];
+			serverConnection.SetDelimiter(new byte[0]);
 			serverConnection.SetMode(MessageMode.DelimiterBound);
 			serverConnection.Send("A");
 		}
@@ -176,7 +195,7 @@ namespace SocketMessaging.Tests
 			serverConnection.SetMode(MessageMode.DelimiterBound);
 			serverConnection.Send("A");
 
-			client.Delimiter = new byte[0];
+			client.SetDelimiter(new byte[0]);
 			client.SetMode(MessageMode.DelimiterBound);
 			var message = client.ReceiveMessage();
 		}
@@ -188,7 +207,7 @@ namespace SocketMessaging.Tests
 		{
 			Helpers.WaitFor(() => server.Connections.Any());
 			var serverConnection = server.Connections.Single();
-			serverConnection.Delimiter = new byte[] { 0x0a, 0x0d, 0x0a };
+			serverConnection.SetDelimiter(new byte[] { 0x0a, 0x0d, 0x0a });
 			serverConnection.Escapecode = 0x0d;
 			serverConnection.SetMode(MessageMode.DelimiterBound);
 			serverConnection.Send("A");
@@ -201,11 +220,11 @@ namespace SocketMessaging.Tests
 		{
 			Helpers.WaitFor(() => server.Connections.Any());
 			var serverConnection = server.Connections.Single();
-			serverConnection.Delimiter = new byte[] { 0x0a, 0x0d, 0x0a };
+			serverConnection.SetDelimiter(new byte[] { 0x0a, 0x0d, 0x0a });
 			serverConnection.SetMode(MessageMode.DelimiterBound);
 			serverConnection.Send("A");
 
-			client.Delimiter = serverConnection.Delimiter;
+			client.SetDelimiter(serverConnection.Delimiter);
 			client.Escapecode = 0x0d;
 			client.SetMode(MessageMode.DelimiterBound);
 			var message = client.ReceiveMessage();
@@ -386,9 +405,9 @@ namespace SocketMessaging.Tests
 			var receivedMessageCounter = 0;
 			Helpers.WaitFor(() => server.Connections.Any());
 			var serverConnection = server.Connections.Single();
-			serverConnection.Delimiter = new byte[] { 0x00 };
+			serverConnection.SetDelimiter(new byte[] { 0x00 });
 			serverConnection.SetMode(MessageMode.DelimiterBound);
-			client.Delimiter = new byte[] { 0x00 };
+			client.SetDelimiter(new byte[] { 0x00 });
 			client.SetMode(MessageMode.DelimiterBound);
 			client.ReceivedMessage += (s, e) => { receivedMessageCounter++; };
 
@@ -416,10 +435,10 @@ Onfest Radestone, þer he bock radde.
 			var receivedMessageCounter = 0;
 			Helpers.WaitFor(() => server.Connections.Any());
 			var serverConnection = server.Connections.Single();
-			serverConnection.Delimiter = new byte[] { 0x00 };
+			serverConnection.SetDelimiter(new byte[] { 0x00 });
 			serverConnection.SetMode(MessageMode.DelimiterBound);
 			serverConnection.MessageEncoding = System.Text.Encoding.GetEncoding("ISO-8859-1");
-			client.Delimiter = new byte[] { 0x00 };
+			client.SetDelimiter(new byte[] { 0x00 });
 			client.SetMode(MessageMode.DelimiterBound);
 			client.ReceivedMessage += (s, e) => { receivedMessageCounter++; };
 
@@ -445,9 +464,9 @@ Onfest Radestone, þer he bock radde.
 			var messageDelimiter1 = client.MessageEncoding.GetBytes("|");
 			var escapeCode1 = client.MessageEncoding.GetBytes("!").Single();
 			serverConnection.Escapecode = escapeCode1;
-			serverConnection.Delimiter = messageDelimiter1;
+			serverConnection.SetDelimiter(messageDelimiter1);
 			client.Escapecode = escapeCode1;
-			client.Delimiter = messageDelimiter1;
+			client.SetDelimiter(messageDelimiter1);
 			serverConnection.Send(sentMessage1);
 			Helpers.WaitFor(() => receivedMessageCounter >= 1);
 			var receivedMessage1 = client.ReceiveMessageString();
@@ -460,9 +479,9 @@ Onfest Radestone, þer he bock radde.
 			var messageDelimiter2 = client.MessageEncoding.GetBytes("M");
 			var escapeCode2 = client.MessageEncoding.GetBytes("1").Single();
 			serverConnection.Escapecode = escapeCode2;
-			serverConnection.Delimiter = messageDelimiter2;
+			serverConnection.SetDelimiter(messageDelimiter2);
 			client.Escapecode = escapeCode2;
-			client.Delimiter = messageDelimiter2;
+			client.SetDelimiter(messageDelimiter2);
 			serverConnection.Send(sentMessage2);
 			Helpers.WaitFor(() => receivedMessageCounter >= 1);
 			var receivedMessage2 = client.ReceiveMessageString();
@@ -604,9 +623,9 @@ Onfest Radestone, þer he bock radde.
 			var receivedMessageCounter = 0;
 			Helpers.WaitFor(() => server.Connections.Any());
 			var serverConnection = server.Connections.Single();
-			serverConnection.Delimiter = serverConnection.MessageEncoding.GetBytes("ᚠ");
+			serverConnection.SetDelimiter(serverConnection.MessageEncoding.GetBytes("ᚠ"));
 			serverConnection.SetMode(MessageMode.DelimiterBound);
-			client.Delimiter = serverConnection.Delimiter;
+			client.SetDelimiter(serverConnection.Delimiter);
 			client.SetMode(MessageMode.DelimiterBound);
 			client.ReceivedMessage += (s, e) => { receivedMessageCounter++; };
 

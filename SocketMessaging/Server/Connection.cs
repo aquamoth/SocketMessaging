@@ -53,13 +53,15 @@ namespace SocketMessaging.Server
 		public void SetMode(MessageMode newMode)
 		{
 			Mode = newMode;
-			var numberOfNewMessages = numberOfNewMessagesInRawQueue(_rawQueue.Peek(0, _rawQueue.Count));
-			for (var i = 0; i < numberOfNewMessages; i++)
-				OnReceivedMessage(EventArgs.Empty);
-
+			retriggerMessageReceivedEvents();
 		}
 
-		public byte[] Delimiter { get; set; }
+		public byte[] Delimiter { get; private set; }
+		public void SetDelimiter(byte[] delimiter)
+		{
+			Delimiter = delimiter;
+			retriggerMessageReceivedEvents();
+		}
 
 		public byte Escapecode { get; set; }
 
@@ -311,6 +313,12 @@ namespace SocketMessaging.Server
 			}
 		}
 
+		private void retriggerMessageReceivedEvents()
+		{
+			var numberOfNewMessages = numberOfNewMessagesInRawQueue(_rawQueue.Peek(0, _rawQueue.Count));
+			for (var i = 0; i < numberOfNewMessages; i++)
+				OnReceivedMessage(EventArgs.Empty);
+		}
 
 		internal byte[] appendEscapeCodes(byte[] buffer)
 		{
