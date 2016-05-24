@@ -131,6 +131,25 @@ namespace SocketMessaging.Tests
 		}
 
 		[TestMethod]
+		public void Ensure_queue_consistency_around_queue_end()
+		{
+			var r = new Random();
+			var queue = new FixedSizedQueue(10);
+
+			var write1 = new byte[10];
+			r.NextBytes(write1);
+			queue.Write(write1);
+			var read1 = queue.Read();
+			CollectionAssert.AreEqual(write1, read1);
+
+			var write2 = new byte[2];
+			r.NextBytes(write2);
+			queue.Write(write2);
+			var read2 = queue.Read();
+			CollectionAssert.AreEqual(write2, read2);
+		}
+
+		[TestMethod]
 		[ExpectedException(typeof(OverflowException))]
 		public void Peeking_past_end_of_queue_throws_exception()
 		{

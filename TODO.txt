@@ -6,11 +6,6 @@ o Send should take an IEnumerable<byte> instead of byte[]
 
 Engineering tasks
 =================
-* Possible bug. Don't think this happens any more:
-	Start with readIndex = 0
-	Write to end of queue so _writeIndex = _queue.Length. (doesn't wrap to 0 because readIndex = 0??)
-	Read entire queue so _readIndex = _writeIndex (= at end of queue). 
-	Write something and then read without crashing.
 o Cant use message delimiter as escape code
 o MaxMessageSize can be increased or lowered during communication and affects the unread stream
 	o Fixed sized messages should support longer than 65535 byte messages (initial MaxMessageSize of Connection)
