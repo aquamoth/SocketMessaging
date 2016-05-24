@@ -73,22 +73,30 @@ namespace SocketMessaging.Server
 				case MessageMode.Raw:
 					_socket.Send(buffer);
 					break;
+
 				case MessageMode.DelimiterBound:
+					if (Delimiter == null || Delimiter.Length == 0)
+						throw new NotSupportedException("Delimiter must be at least one byte for delimited messages.");
+					if (Delimiter.Contains(Escapecode))
+						throw new NotSupportedException("The escape code can not be part of the message delimiter.");
 
 					var encodedBuffer = appendEscapeCodes(buffer);
 					_socket.Send(encodedBuffer);
 					_socket.Send(Delimiter);
 					break;
+
 				case MessageMode.PrefixedLength:
 					var sizeOfMessage = BitConverter.GetBytes(buffer.Length);
 					_socket.Send(sizeOfMessage);
 					_socket.Send(buffer);
 					break;
+
 				case MessageMode.FixedLength:
 					if (buffer.Length != MaxMessageSize)
 						throw new ArgumentException(string.Format("Message is {0} bytes but expected {1} bytes.", buffer.Length, MaxMessageSize));
 					_socket.Send(buffer);
 					break;
+
 				default:
 					throw new NotSupportedException();
 			}
@@ -113,6 +121,11 @@ namespace SocketMessaging.Server
 			{
 				case MessageMode.DelimiterBound:
 					{
+						if (Delimiter == null || Delimiter.Length == 0)
+							throw new NotSupportedException("Delimiter must be at least one byte for delimited messages.");
+						if (Delimiter.Contains(Escapecode))
+							throw new NotSupportedException("The escape code can not be part of the message delimiter.");
+
 						var buffer = new byte[0].AsEnumerable();
 						var inEscapeMode = false;
 						do

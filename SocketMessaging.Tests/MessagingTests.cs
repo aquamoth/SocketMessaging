@@ -156,6 +156,63 @@ namespace SocketMessaging.Tests
 
 		[TestMethod]
 		[TestCategory("Connection: Messages")]
+		[ExpectedException(typeof(NotSupportedException))]
+		public void Cant_send_delimited_message_when_delimiter_is_empty()
+		{
+			Helpers.WaitFor(() => server.Connections.Any());
+			var serverConnection = server.Connections.Single();
+			serverConnection.Delimiter = new byte[0];
+			serverConnection.SetMode(MessageMode.DelimiterBound);
+			serverConnection.Send("A");
+		}
+
+		[TestMethod]
+		[TestCategory("Connection: Messages")]
+		[ExpectedException(typeof(NotSupportedException))]
+		public void Cant_receive_delimited_message_when_delimiter_is_empty()
+		{
+			Helpers.WaitFor(() => server.Connections.Any());
+			var serverConnection = server.Connections.Single();
+			serverConnection.SetMode(MessageMode.DelimiterBound);
+			serverConnection.Send("A");
+
+			client.Delimiter = new byte[0];
+			client.SetMode(MessageMode.DelimiterBound);
+			var message = client.ReceiveMessage();
+		}
+
+		[TestMethod]
+		[TestCategory("Connection: Messages")]
+		[ExpectedException(typeof(NotSupportedException))]
+		public void Cant_send_message_when_escapecode_is_part_of_delimiter()
+		{
+			Helpers.WaitFor(() => server.Connections.Any());
+			var serverConnection = server.Connections.Single();
+			serverConnection.Delimiter = new byte[] { 0x0a, 0x0d, 0x0a };
+			serverConnection.Escapecode = 0x0d;
+			serverConnection.SetMode(MessageMode.DelimiterBound);
+			serverConnection.Send("A");
+		}
+
+		[TestMethod]
+		[TestCategory("Connection: Messages")]
+		[ExpectedException(typeof(NotSupportedException))]
+		public void Cant_receive_message_when_escapecode_is_part_of_delimiter()
+		{
+			Helpers.WaitFor(() => server.Connections.Any());
+			var serverConnection = server.Connections.Single();
+			serverConnection.Delimiter = new byte[] { 0x0a, 0x0d, 0x0a };
+			serverConnection.SetMode(MessageMode.DelimiterBound);
+			serverConnection.Send("A");
+
+			client.Delimiter = serverConnection.Delimiter;
+			client.Escapecode = 0x0d;
+			client.SetMode(MessageMode.DelimiterBound);
+			var message = client.ReceiveMessage();
+		}
+
+		[TestMethod]
+		[TestCategory("Connection: Messages")]
 		[ExpectedException(typeof(InvalidOperationException))]
 		public void Delimited_messages_cant_overflow_MaxMessageSize()
 		{
