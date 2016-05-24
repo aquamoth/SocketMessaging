@@ -208,7 +208,7 @@ namespace SocketMessaging.Tests
 			Helpers.WaitFor(() => server.Connections.Any());
 			var serverConnection = server.Connections.Single();
 			serverConnection.SetDelimiter(new byte[] { 0x0a, 0x0d, 0x0a });
-			serverConnection.Escapecode = 0x0d;
+			serverConnection.SetEscapecode(0x0d);
 			serverConnection.SetMode(MessageMode.DelimiterBound);
 			serverConnection.Send("A");
 		}
@@ -225,7 +225,7 @@ namespace SocketMessaging.Tests
 			serverConnection.Send("A");
 
 			client.SetDelimiter(serverConnection.Delimiter);
-			client.Escapecode = 0x0d;
+			client.SetEscapecode(0x0d);
 			client.SetMode(MessageMode.DelimiterBound);
 			var message = client.ReceiveMessage();
 		}
@@ -463,9 +463,9 @@ Onfest Radestone, þer he bock radde.
 			var sentMessage1 = @"Message 1! part 1|part 2";
 			var messageDelimiter1 = client.MessageEncoding.GetBytes("|");
 			var escapeCode1 = client.MessageEncoding.GetBytes("!").Single();
-			serverConnection.Escapecode = escapeCode1;
+			serverConnection.SetEscapecode(escapeCode1);
 			serverConnection.SetDelimiter(messageDelimiter1);
-			client.Escapecode = escapeCode1;
+			client.SetEscapecode(escapeCode1);
 			client.SetDelimiter(messageDelimiter1);
 			serverConnection.Send(sentMessage1);
 			Helpers.WaitFor(() => receivedMessageCounter >= 1);
@@ -478,14 +478,42 @@ Onfest Radestone, þer he bock radde.
 			var sentMessage2 = @"Message 2! part 1|part 2";
 			var messageDelimiter2 = client.MessageEncoding.GetBytes("M");
 			var escapeCode2 = client.MessageEncoding.GetBytes("1").Single();
-			serverConnection.Escapecode = escapeCode2;
+			serverConnection.SetEscapecode(escapeCode2);
 			serverConnection.SetDelimiter(messageDelimiter2);
-			client.Escapecode = escapeCode2;
+			client.SetEscapecode(escapeCode2);
 			client.SetDelimiter(messageDelimiter2);
 			serverConnection.Send(sentMessage2);
 			Helpers.WaitFor(() => receivedMessageCounter >= 1);
 			var receivedMessage2 = client.ReceiveMessageString();
 			Assert.AreEqual(sentMessage2, receivedMessage2, "Second message wasn't correctly received");
+		}
+
+		[TestMethod]
+		public void Changing_Escapecode_retriggers_received_events()
+		{
+			byte escapeCode = 0x40;
+			var receivedMessageCounter = 0;
+			Helpers.WaitFor(() => server.Connections.Any());
+			var serverConnection = server.Connections.Single();
+			client.ReceivedMessage += (s, e) => { receivedMessageCounter++; };
+
+			serverConnection.SetDelimiter(serverConnection.MessageEncoding.GetBytes(" "));
+			serverConnection.SetEscapecode(escapeCode);
+			serverConnection.SetMode(MessageMode.DelimiterBound);
+			client.SetDelimiter(serverConnection.Delimiter);
+			client.SetMode(MessageMode.DelimiterBound);
+
+			var sentMessage = @"Message 1";
+			serverConnection.Send(sentMessage);
+
+			Helpers.WaitFor(() => receivedMessageCounter > 0);
+			receivedMessageCounter = 0;
+			client.SetEscapecode(escapeCode);
+			Helpers.WaitFor(() => receivedMessageCounter > 0);
+			Assert.IsTrue(receivedMessageCounter > 0);
+
+			var receivedMessage = client.ReceiveMessageString();
+			Assert.AreEqual(sentMessage, receivedMessage, "First message wasn't correctly received");
 		}
 
 		[TestMethod]

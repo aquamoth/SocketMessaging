@@ -3,6 +3,8 @@ User stories
 * Client and server can communicate by messages instead of packets
 o Should support multiple delimiters?
 o Send should take an IEnumerable<byte> instead of byte[]
+o SetDelimiter() should support single bytes, strings and chars.
+	o Changing message encoding should change delimiter bytes IF set as char or string?
 
 Engineering tasks
 =================
@@ -12,6 +14,7 @@ o MaxMessageSize can be increased or lowered during communication and affects th
 	o Fixed sized messages should support longer than 65535 byte messages (initial MaxMessageSize of Connection)
 o Write proper tests for Connection.appendEscapeCodes() and Connection.removeEscapeCodes()
 o Sending messages larger than MaxMessageSize should throw IllegalOperationException
+o Should not trigger receivedMessage event when an escaped delimiter is found in a delimited message
 
 
 

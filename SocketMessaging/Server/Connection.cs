@@ -63,7 +63,12 @@ namespace SocketMessaging.Server
 			retriggerMessageReceivedEvents();
 		}
 
-		public byte Escapecode { get; set; }
+		public byte Escapecode { get; private set; }
+		public void SetEscapecode(byte escapecode)
+		{
+			Escapecode = escapecode;
+			retriggerMessageReceivedEvents();
+		}
 
 		public Encoding MessageEncoding { get; set; }
 
