@@ -43,7 +43,7 @@ namespace SocketMessaging
 		internal byte[] Peek(int peekPosition, int numberOfBytes)
 		{
 			if (peekPosition + numberOfBytes > Count)
-				throw new OverflowException("Cant peek outside end of queue");
+				numberOfBytes = Count - peekPosition;
 
 			var buffer = new byte[numberOfBytes];
 

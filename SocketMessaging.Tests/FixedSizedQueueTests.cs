@@ -150,11 +150,12 @@ namespace SocketMessaging.Tests
 		}
 
 		[TestMethod]
-		[ExpectedException(typeof(OverflowException))]
-		public void Peeking_past_end_of_queue_throws_exception()
+		public void Peeking_too_far_ahead_returns_shorter_buffer_than_requested()
 		{
 			var queue = new FixedSizedQueue(1024);
-			var actual = queue.Peek(0, 1);
+			queue.Write(new byte[5]);
+			var actual = queue.Peek(0, 10);
+			Assert.AreEqual(5, actual.Length);
 		}
 
 		[TestMethod]
