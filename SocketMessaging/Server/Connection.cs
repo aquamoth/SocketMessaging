@@ -59,7 +59,7 @@ namespace SocketMessaging.Server
 
 		}
 
-		public byte Delimiter { get; set; }
+		public byte[] Delimiter { get; set; }
 
 		public byte Escapecode { get; set; }
 
@@ -74,17 +74,10 @@ namespace SocketMessaging.Server
 					_socket.Send(buffer);
 					break;
 				case MessageMode.DelimiterBound:
-					var encodedBuffer = buffer.SelectMany(x =>
-					{
-						if (x == Escapecode)
-							return new[] { Escapecode, Escapecode };
-						if (x == Delimiter)
-							return new[] { Escapecode, Delimiter };
-						return new[] { x };
-					}).ToArray();
 
+					var encodedBuffer = appendEscapeCodes(buffer);
 					_socket.Send(encodedBuffer);
-					_socket.Send(new[] { Delimiter });
+					_socket.Send(Delimiter);
 					break;
 				case MessageMode.PrefixedLength:
 					var sizeOfMessage = BitConverter.GetBytes(buffer.Length);
@@ -132,9 +125,9 @@ namespace SocketMessaging.Server
 								return null;
 							}
 
-							var escapedBuffer = stripEscapeCodes(readBuffer, ref inEscapeMode);
+							var escapedBuffer = removeEscapeCodes(readBuffer, ref inEscapeMode);
 							buffer = buffer.Concat(escapedBuffer);
-						} while (buffer.Last() == Delimiter);
+						} while (buffer.Skip(buffer.Count() - Delimiter.Length).SequenceEqual(Delimiter));
 						return buffer.ToArray();
 					}
 
@@ -259,20 +252,39 @@ namespace SocketMessaging.Server
 					return 0;
 
 				case MessageMode.DelimiterBound:
-					return buffer.Where(b => b == Delimiter).Count();
+					{
+						var index = 0;
+						var counter = 0;
+						while (index < buffer.Length)
+						{
+							if (buffer.Skip(index).Take(Delimiter.Length).SequenceEqual(Delimiter))
+							{
+								//TODO: Should make sure there is no escapecode just before the delimiter
+								counter++;
+								index += Delimiter.Length;
+							}
+							else
+							{
+								index++;
+							}
+						}
+						return counter;
+					}
 
 				case MessageMode.PrefixedLength:
-					var queueLengthBeforeBuffer = _rawQueue.Count - buffer.Length;
-					var peekPosition = 0;
-					var counter = 0;
-					while (peekPosition < _rawQueue.Count)
 					{
-						var messageSize = BitConverter.ToInt32(_rawQueue.Peek(peekPosition, 4), 0);
-						peekPosition += 4 + messageSize;
-						if (peekPosition >= queueLengthBeforeBuffer && peekPosition <= _rawQueue.Count)
-							counter++;
+						var queueLengthBeforeBuffer = _rawQueue.Count - buffer.Length;
+						var peekPosition = 0;
+						var counter = 0;
+						while (peekPosition < _rawQueue.Count)
+						{
+							var messageSize = BitConverter.ToInt32(_rawQueue.Peek(peekPosition, 4), 0);
+							peekPosition += 4 + messageSize;
+							if (peekPosition >= queueLengthBeforeBuffer && peekPosition <= _rawQueue.Count)
+								counter++;
+						}
+						return counter;
 					}
-					return counter;
 
 				case MessageMode.FixedLength:
 					var pendingBytes = _rawQueue.Count % MaxMessageSize;
@@ -285,7 +297,35 @@ namespace SocketMessaging.Server
 			}
 		}
 
-		internal byte[] stripEscapeCodes(byte[] message, ref bool inEscapeMode)
+
+		internal byte[] appendEscapeCodes(byte[] buffer)
+		{
+			var encodedBuffer = new byte[0].AsEnumerable();
+			var startIndex = 0;
+			for(var endIndex=0;endIndex<buffer.Length;endIndex++)
+			{
+				if (buffer[endIndex] == Escapecode)
+				{
+					encodedBuffer = encodedBuffer.Concat(buffer.Skip(startIndex).Take(endIndex - startIndex));
+					startIndex = endIndex; //Add the escapecode again, so it occurs twice
+				}
+				else if (buffer.Skip(endIndex).Take(Delimiter.Length).SequenceEqual(Delimiter))
+				{
+					encodedBuffer = encodedBuffer.Concat(buffer.Skip(startIndex).Take(endIndex - startIndex));
+					encodedBuffer = encodedBuffer.Concat(new[] { Escapecode });
+					startIndex = endIndex; //Add delimiter after escapecode
+				}
+				else
+				{
+					//continue matching
+				}
+			}
+			encodedBuffer = encodedBuffer.Concat(buffer.Skip(startIndex));
+
+			return encodedBuffer.ToArray();
+		}
+
+		internal byte[] removeEscapeCodes(byte[] message, ref bool inEscapeMode)
 		{
 			IEnumerable<byte> escapedMessage = new byte[0];
 
@@ -300,7 +340,7 @@ namespace SocketMessaging.Server
 						escapedMessage = escapedMessage.Concat(message.Skip(startIndex).Take(endIndex - startIndex));
 						startIndex = endIndex + 1;
 					}
-					else if (token == Delimiter)
+					else if (message.Skip(endIndex).Take(Delimiter.Length).SequenceEqual(Delimiter))
 					{
 						escapedMessage = escapedMessage.Concat(message.Skip(startIndex).Take(endIndex - startIndex - 1));
 						startIndex = endIndex;
@@ -309,12 +349,12 @@ namespace SocketMessaging.Server
 				}
 				else
 				{
-					if (token == Delimiter)
+					if (message.Skip(endIndex).Take(Delimiter.Length).SequenceEqual(Delimiter))
 					{
-						if (endIndex != message.Length - 1)
-							throw new ApplicationException();
+						if (endIndex != message.Length - Delimiter.Length)
+							throw new ApplicationException("Found delimiter inside message.");
 						escapedMessage = escapedMessage.Concat(message.Skip(startIndex).Take(endIndex - startIndex));
-						startIndex = endIndex + 1;
+						startIndex = endIndex + Delimiter.Length;//Skip past the delimiter (to end-of-buffer)
 					}
 					else if (token == Escapecode)
 					{
@@ -337,7 +377,7 @@ namespace SocketMessaging.Server
 			Id = id;
 			_socket = socket;
 			MaxMessageSize = 65535; //Same size as default socket window
-			Delimiter = 0x0a; //\n (<CR>) as default delimiter
+			Delimiter = new byte[] { 0x0a }; //\n (<CR>) as default delimiter
 			Escapecode = Encoding.UTF8.GetBytes(@"\").Single();
 			MessageEncoding = Encoding.UTF8;
 			_rawQueue = new FixedSizedQueue(MaxMessageSize);

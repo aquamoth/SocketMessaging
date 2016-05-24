@@ -112,9 +112,9 @@ namespace SocketMessaging.Tests
 		[TestCategory("Connection: Messages")]
 		public void Can_switch_delimiter()
 		{
-			Assert.AreEqual(0x0a, client.Delimiter);
-			client.Delimiter = 0x20;
-			Assert.AreEqual(0x20, client.Delimiter);
+			CollectionAssert.AreEqual(new byte[] { 0x0a }, client.Delimiter);
+			client.Delimiter = new byte[] { 0x20 };
+			CollectionAssert.AreEqual(new byte[] { 0x20 }, client.Delimiter);
 		}
 
 		[TestMethod]
@@ -156,6 +156,7 @@ namespace SocketMessaging.Tests
 
 		[TestMethod]
 		[TestCategory("Connection: Messages")]
+		[ExpectedException(typeof(InvalidOperationException))]
 		public void Delimited_messages_cant_overflow_MaxMessageSize()
 		{
 			var receivedMessageCounter = 0;
@@ -166,14 +167,12 @@ namespace SocketMessaging.Tests
 			client.MaxMessageSize = 10;
 			client.ReceivedMessage += (s, e) => { receivedMessageCounter++; };
 
-			var delimiter = new byte[] { 0x0a };
-			var sentMessage = System.Text.Encoding.UTF8.GetBytes(Guid.NewGuid().ToString());
-			serverConnection.Send(sentMessage.Concat(delimiter).ToArray());
+			var sentBuffer = new byte[client.MaxMessageSize + 1];
+			serverConnection.Send(sentBuffer.Concat(client.Delimiter).ToArray());
 
 			Helpers.WaitFor(() => receivedMessageCounter >= 1, 100);
 			//Assert.IsTrue(receivedMessageCounter == 0, "Client should not trigger a message received event");
 			var receivedMessage = client.ReceiveMessage();
-			Assert.IsNull(receivedMessage, "Client should not return message larger than MaxMessageSize");
 		}
 
 		[TestMethod]
@@ -330,9 +329,9 @@ namespace SocketMessaging.Tests
 			var receivedMessageCounter = 0;
 			Helpers.WaitFor(() => server.Connections.Any());
 			var serverConnection = server.Connections.Single();
-			serverConnection.Delimiter = 0x00;
+			serverConnection.Delimiter = new byte[] { 0x00 };
 			serverConnection.SetMode(MessageMode.DelimiterBound);
-			client.Delimiter = 0x00;
+			client.Delimiter = new byte[] { 0x00 };
 			client.SetMode(MessageMode.DelimiterBound);
 			client.ReceivedMessage += (s, e) => { receivedMessageCounter++; };
 
@@ -360,10 +359,10 @@ Onfest Radestone, þer he bock radde.
 			var receivedMessageCounter = 0;
 			Helpers.WaitFor(() => server.Connections.Any());
 			var serverConnection = server.Connections.Single();
-			serverConnection.Delimiter = 0x00;
+			serverConnection.Delimiter = new byte[] { 0x00 };
 			serverConnection.SetMode(MessageMode.DelimiterBound);
 			serverConnection.MessageEncoding = System.Text.Encoding.GetEncoding("ISO-8859-1");
-			client.Delimiter = 0x00;
+			client.Delimiter = new byte[] { 0x00 };
 			client.SetMode(MessageMode.DelimiterBound);
 			client.ReceivedMessage += (s, e) => { receivedMessageCounter++; };
 
@@ -386,7 +385,7 @@ Onfest Radestone, þer he bock radde.
 			client.SetMode(MessageMode.DelimiterBound);
 
 			var sentMessage1 = @"Message 1! part 1|part 2";
-			var messageDelimiter1 = client.MessageEncoding.GetBytes("|").Single();
+			var messageDelimiter1 = client.MessageEncoding.GetBytes("|");
 			var escapeCode1 = client.MessageEncoding.GetBytes("!").Single();
 			serverConnection.Escapecode = escapeCode1;
 			serverConnection.Delimiter = messageDelimiter1;
@@ -401,7 +400,7 @@ Onfest Radestone, þer he bock radde.
 
 			receivedMessageCounter = 0;
 			var sentMessage2 = @"Message 2! part 1|part 2";
-			var messageDelimiter2 = client.MessageEncoding.GetBytes("M").Single();
+			var messageDelimiter2 = client.MessageEncoding.GetBytes("M");
 			var escapeCode2 = client.MessageEncoding.GetBytes("1").Single();
 			serverConnection.Escapecode = escapeCode2;
 			serverConnection.Delimiter = messageDelimiter2;
@@ -527,6 +526,33 @@ Onfest Radestone, þer he bock radde.
 			client.SetMode(MessageMode.PrefixedLength);
 			Helpers.WaitFor(() => client.Available >= message.Length);
 			var receivedMessage = client.ReceiveMessageString();
+		}
+
+		[TestMethod]
+		public void Can_receive_multi_byte_delimited_messages()
+		{
+			var receivedMessageCounter = 0;
+			Helpers.WaitFor(() => server.Connections.Any());
+			var serverConnection = server.Connections.Single();
+			serverConnection.Delimiter = serverConnection.MessageEncoding.GetBytes("ᚠ");
+			serverConnection.SetMode(MessageMode.DelimiterBound);
+			client.Delimiter = serverConnection.Delimiter;
+			client.SetMode(MessageMode.DelimiterBound);
+			client.ReceivedMessage += (s, e) => { receivedMessageCounter++; };
+
+			var sentMessage1 = @"Text row 1";
+			serverConnection.Send(sentMessage1);
+
+			var sentMessage2 = "Text row 2";
+			serverConnection.Send(sentMessage2);
+
+			Helpers.WaitFor(() => receivedMessageCounter >= 1);
+			var receivedMessage1 = client.ReceiveMessageString();
+			Assert.AreEqual(sentMessage1, receivedMessage1, "Message wasn't correctly received");
+
+			Helpers.WaitFor(() => receivedMessageCounter >= 2);
+			var receivedMessage2 = client.ReceiveMessageString();
+			Assert.AreEqual(sentMessage2, receivedMessage2, "Message wasn't correctly received");
 		}
 	}
 }

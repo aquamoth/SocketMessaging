@@ -83,18 +83,31 @@ namespace SocketMessaging
 			return buffer;
 		}
 
-		internal byte[] ReadUntil(byte delimiter, int maxReadSize)
+		internal byte[] ReadUntil(byte[] delimiter, int maxReadSize)
 		{
+			var delimiterIndex = 0;
 			var counter = 0;
 			var walker = _readIndex;
 			while (walker != _writeIndex && counter < maxReadSize)
 			{
-				if (_queue[walker] == delimiter)
-					return Read(counter + 1);
+				counter++;
+
+				if (_queue[walker] == delimiter[delimiterIndex])
+				{
+					delimiterIndex++;
+					if (delimiterIndex == delimiter.Length)
+						return Read(counter);
+				}
+				else if (delimiterIndex != 0)
+				{
+					counter -= delimiterIndex;
+					walker = (walker - delimiterIndex + _queue.Length) % _queue.Length;
+					delimiterIndex = 0;
+				}
+
 				walker++;
 				if (walker == _queue.Length)
 					walker = 0;
-				counter++;
 			}
 			return null;
 		}

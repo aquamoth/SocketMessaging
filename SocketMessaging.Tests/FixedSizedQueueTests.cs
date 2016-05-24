@@ -70,6 +70,47 @@ namespace SocketMessaging.Tests
 		}
 
 		[TestMethod]
+		public void Can_read_until_byte_array_is_found()
+		{
+			var queue = new FixedSizedQueue(1024);
+
+			var message1 = "This is a simple message|||";
+			var message2 = "With a three-pipe delimiter|||";
+			var writeBuffer = Encoding.UTF8.GetBytes(message1 + message2);
+			queue.Write(writeBuffer);
+
+			var readBuffer = queue.ReadUntil(Encoding.UTF8.GetBytes("|||"), 100);
+			Assert.AreEqual(message1, Encoding.UTF8.GetString(readBuffer));
+		}
+
+		[TestMethod]
+		public void Can_read_with_part_of_delimiter_in_message()
+		{
+			var queue = new FixedSizedQueue(1024);
+
+			var message = "This is a simple message||With a three-pipe delimiter|||";
+			queue.Write(Encoding.UTF8.GetBytes(message));
+
+			var readBuffer = queue.ReadUntil(Encoding.UTF8.GetBytes("|||"), 100);
+			Assert.AreEqual(message, Encoding.UTF8.GetString(readBuffer));
+		}
+
+		[TestMethod]
+		public void Can_read_with_delimiter_crossing_queue_length()
+		{
+			var queue = new FixedSizedQueue(55);
+
+			var message1 = "This is a simple message|||";
+			queue.Write(Encoding.UTF8.GetBytes(message1));
+			var readBuffer = queue.ReadUntil(Encoding.UTF8.GetBytes("|||"), 55);
+
+			var message2 = "With a three-pipe delimiter!||And End|||";
+			queue.Write(Encoding.UTF8.GetBytes(message2));
+			readBuffer = queue.ReadUntil(Encoding.UTF8.GetBytes("|||"), 55);
+			Assert.AreEqual(message2, Encoding.UTF8.GetString(readBuffer));
+		}
+
+		[TestMethod]
 		public void Can_read_and_write_more_than_queue_max_size()
 		{
 			var r = new Random();
