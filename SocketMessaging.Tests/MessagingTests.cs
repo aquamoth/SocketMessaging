@@ -470,6 +470,19 @@ Onfest Radestone, þer he bock radde.
 		}
 
 		[TestMethod]
+		public void Writing_raw_to_client_that_still_expects_PrefixedLength()
+		{
+			Helpers.WaitFor(() => server.Connections.Any());
+			var serverConnection = server.Connections.Single();
+			serverConnection.Send(BitConverter.GetBytes(-100));
+			serverConnection.Send(new byte[] { 75 });
+			Helpers.WaitFor(() => client.Available >= 4);
+
+			//This should not throw exception when checking existing buffer for valid messages
+			client.SetMode(MessageMode.PrefixedLength);
+		}
+
+		[TestMethod]
 		public void Can_send_and_receive_a_mix_of_message_types()
 		{
 			var rnd = new Random();

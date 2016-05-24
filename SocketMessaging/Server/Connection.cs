@@ -289,9 +289,10 @@ namespace SocketMessaging.Server
 						var queueLengthBeforeBuffer = _rawQueue.Count - buffer.Length;
 						var peekPosition = 0;
 						var counter = 0;
-						while (peekPosition < _rawQueue.Count)
+						while (peekPosition < _rawQueue.Count - 4)
 						{
 							var messageSize = BitConverter.ToInt32(_rawQueue.Peek(peekPosition, 4), 0);
+							if (messageSize <= 0) break; //This message is likely not meant to be read in current mode, so just abort counter
 							peekPosition += 4 + messageSize;
 							if (peekPosition >= queueLengthBeforeBuffer && peekPosition <= _rawQueue.Count)
 								counter++;
