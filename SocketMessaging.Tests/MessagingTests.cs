@@ -270,6 +270,10 @@ namespace SocketMessaging.Tests
 			var messageSize2 = BitConverter.GetBytes(sentMessage2.Length);
 			serverConnection.Send(messageSize2.Concat(sentMessage2).ToArray());
 
+			var sentMessage3 = new byte[0];
+			var messageSize3 = BitConverter.GetBytes(sentMessage3.Length);
+			serverConnection.Send(messageSize3.Concat(sentMessage3).ToArray());
+
 			Helpers.WaitFor(() => receivedMessageCounter >= 1);
 			Assert.IsTrue(receivedMessageCounter >= 1, "Client should trigger one message received event");
 			var receivedMessage = client.ReceiveMessage();
@@ -279,6 +283,11 @@ namespace SocketMessaging.Tests
 			Assert.IsTrue(receivedMessageCounter >= 2, "Client should trigger two message received event");
 			receivedMessage = client.ReceiveMessage();
 			CollectionAssert.AreEqual(sentMessage2, receivedMessage, "Second message wasn't correctly received");
+
+			Helpers.WaitFor(() => receivedMessageCounter >= 3);
+			Assert.IsTrue(receivedMessageCounter >= 3, "Client should trigger three message received event");
+			receivedMessage = client.ReceiveMessage();
+			CollectionAssert.AreEqual(sentMessage3, receivedMessage, "Third message wasn't correctly received");
 		}
 
 		[TestMethod]

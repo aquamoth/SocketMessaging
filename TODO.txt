@@ -1,23 +1,25 @@
 User stories
 ============
 * Client and server can communicate by messages instead of packets
-o Should support multiple delimiters?
 o Send should take an IEnumerable<byte> instead of byte[]
 o SetDelimiter() should support single bytes, strings and chars.
 	o Changing message encoding should change delimiter bytes IF set as char or string?
+o Attach/Detach/Create new from existing socket
+o Read end of queue after connection is lost
+o Should support multiple delimiters?
+o MaxMessageSize can be increased or lowered during communication and affects the unread stream
+	o Fixed sized messages should support longer than 65535 byte messages (initial MaxMessageSize of Connection)
 
 Engineering tasks
 =================
-* Change setters for Delimiter and Escapecode to methods that triggers MessageReceived events just like SetMode() does
-o Can send empty array in lengthPrefixed mode
-o MaxMessageSize can be increased or lowered during communication and affects the unread stream
-	o Fixed sized messages should support longer than 65535 byte messages (initial MaxMessageSize of Connection)
-o Write proper tests for Connection.appendEscapeCodes() and Connection.removeEscapeCodes()
 o Sending messages larger than MaxMessageSize should throw IllegalOperationException
-o Should not trigger receivedMessage event when an escaped delimiter is found in a delimited message
+o Check that reading/writing is thread safe vs poolling thread
+o Send(byte[]) should be renamed SendRaw() or Write(), so send(byte[]) sends messages
 
 
 
 Known Problems
 ==============
 o Connection.Poll() throws exception if socket closes just before checking if this.Available > 0.
+o Write proper tests for Connection.appendEscapeCodes() and Connection.removeEscapeCodes()
+o Should not trigger receivedMessage event when an escaped delimiter is found in a delimited message
