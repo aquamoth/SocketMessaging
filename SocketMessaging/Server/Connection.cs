@@ -75,6 +75,9 @@ namespace SocketMessaging.Server
 		public void Send(byte[] buffer)
 		{
 			Helpers.DebugInfo("#{0}: Sending {1} bytes.", Id, buffer.Length);
+			if (Mode != MessageMode.Raw && buffer.Length > MaxMessageSize)
+				throw new ArgumentException("Message is larger than MaxMessageSize.");
+
 			switch (Mode)
 			{
 				case MessageMode.Raw:

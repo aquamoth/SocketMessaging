@@ -368,6 +368,18 @@ namespace SocketMessaging.Tests
 
 		[TestMethod]
 		[TestCategory("Connection: Messages")]
+		[ExpectedException(typeof(ArgumentException))]
+		public void Cant_send_messages_larger_than_MaxMessageSize()
+		{
+			Helpers.WaitFor(() => server.Connections.Any());
+			var serverConnection = server.Connections.Single();
+			serverConnection.SetMode(MessageMode.PrefixedLength);
+			serverConnection.MaxMessageSize = 4;
+			serverConnection.Send("TestMessage");
+		}
+
+		[TestMethod]
+		[TestCategory("Connection: Messages")]
 		public void Can_send_fixed_sized_messages()
 		{
 			var receivedMessageCounter = 0;

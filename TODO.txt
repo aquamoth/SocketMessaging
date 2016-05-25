@@ -12,9 +12,7 @@ o MaxMessageSize can be increased or lowered during communication and affects th
 
 Engineering tasks
 =================
-o Sending messages larger than MaxMessageSize should throw IllegalOperationException
 o Check that reading/writing is thread safe vs poolling thread
-o Send(byte[]) should be renamed SendRaw() or Write(), so send(byte[]) sends messages
 
 
 
