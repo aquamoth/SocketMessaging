@@ -1,5 +1,6 @@
 User stories
 ============
+* Review why Thread-safe test FAILED once on AppVeyor!
 o Attach/Detach/Create new from existing socket
 o MaxMessageSize can be increased or lowered during communication and affects the unread stream
 	o Fixed sized messages should support longer than 65535 byte messages (initial MaxMessageSize of Connection)
