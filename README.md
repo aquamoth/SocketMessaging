@@ -1,6 +1,5 @@
 # SocketMessaging
-___
-*SocketMessaging* is a package with wrappers around System.Net.Sockets.Socket, much like the C# internal classes TcpClient and TcpListener.
+*SocketMessaging* is a package with wrappers around `System.Net.Sockets.Socket`, much like the C# internal classes `TcpClient` and `TcpListener`.
 Major benfits over the internal classes are:
 * Event-driven design.
 * Message-based communication with several supported types of protocols.
