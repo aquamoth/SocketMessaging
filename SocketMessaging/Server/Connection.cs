@@ -62,6 +62,18 @@ namespace SocketMessaging.Server
 			Delimiter = delimiter;
 			retriggerMessageReceivedEvents();
 		}
+		public void SetDelimiter(byte delimiter)
+		{
+			SetDelimiter(new byte[] { delimiter });
+		}
+		public void SetDelimiter(string delimiter)
+		{
+			SetDelimiter(MessageEncoding.GetBytes(delimiter));
+		}
+		public void SetDelimiter(char delimiter)
+		{
+			SetDelimiter(delimiter.ToString());
+		}
 
 		public byte Escapecode { get; private set; }
 		public void SetEscapecode(byte escapecode)

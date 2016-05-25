@@ -109,6 +109,21 @@ namespace SocketMessaging.Tests
 		}
 
 		[TestMethod]
+		public void Can_change_delimiter()
+		{
+			CollectionAssert.AreEqual(new byte[] { 0x0a }, client.Delimiter);
+			client.SetDelimiter(new byte[] { 0x00, 0x40 });
+			CollectionAssert.AreEqual(new byte[] { 0x00, 0x40 }, client.Delimiter);
+			client.SetDelimiter(0x40);
+			CollectionAssert.AreEqual(new byte[] { 0x40 }, client.Delimiter);
+			client.SetDelimiter('\n');
+			CollectionAssert.AreEqual(new byte[] { 0x0a }, client.Delimiter);
+			client.MessageEncoding = System.Text.Encoding.GetEncoding("ISO-8859-1");
+			client.SetDelimiter("-åäö-");
+			CollectionAssert.AreEqual(new byte[] { 45, 229, 228, 246, 45 }, client.Delimiter);
+		}
+
+		[TestMethod]
 		[TestCategory("Connection: Messages")]
 		public void Changing_delimiter_retriggers_received_messages()
 		{
