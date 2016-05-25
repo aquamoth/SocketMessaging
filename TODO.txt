@@ -1,6 +1,5 @@
 User stories
 ============
-o Read end of queue after connection is lost
 o Connection must trigger event to stop/start sending due to slow client. Throw exception if not adhering
 o Attach/Detach/Create new from existing socket
 o MaxMessageSize can be increased or lowered during communication and affects the unread stream

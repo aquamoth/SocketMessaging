@@ -262,6 +262,23 @@ namespace SocketMessaging.Tests
 			CollectionAssert.AreEqual(buffer, connectionBuffer.ToArray(), "Connection should receive the same data the client sent.");
 		}
 
+		[TestMethod]
+		public void Can_read_stream_after_connection_closed()
+		{
+			connectClient();
+			Helpers.WaitFor(() => server.Connections.Any());
+			var serverConnection = server.Connections.First();
+
+			var sentBuffer = new byte[10];
+			rnd.NextBytes(sentBuffer);
+			serverConnection.Send(sentBuffer);
+			serverConnection.Close();
+
+			Helpers.WaitFor(() => !client.IsConnected);
+			var receiveBuffer = client.Receive();
+
+			CollectionAssert.AreEqual(sentBuffer, receiveBuffer, "Client should receive what server sent event after a disconnect.");
+		}
 
 
 		private void connectClient()
