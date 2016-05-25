@@ -90,30 +90,28 @@ namespace SocketMessaging.Tests
 		[TestCategory("TcpServer")]
 		public void Enumerates_connected_clients()
 		{
-			const int SLEEP_TIME = 25;
 			var serverAddress = new IPAddress(new byte[] { 127, 0, 0, 1 });
 
 			Assert.AreEqual(0, server.Connections.Count(), "No clients before first connection");
 
 			var client1 = TcpClient.Connect(serverAddress, SERVER_PORT);
-			System.Threading.Thread.Sleep(SLEEP_TIME);
+			Helpers.WaitFor(() => server.Connections.Any());
 			Assert.AreEqual(1, server.Connections.Count(), "One client connected");
 			Assert.AreEqual(1, server.Connections.First().Id, "Connection Id");
 
-
 			var client2 = TcpClient.Connect(serverAddress, SERVER_PORT);
-			System.Threading.Thread.Sleep(SLEEP_TIME);
+			Helpers.WaitFor(() => server.Connections.Count() >= 2);
 			Assert.AreEqual(2, server.Connections.Count(), "Two clients connected");
 			Assert.AreEqual(1, server.Connections.First().Id, "Connection Id");
 			Assert.AreEqual(2, server.Connections.Skip(1).First().Id, "Connection Id");
 
 			client1.Close();
-			System.Threading.Thread.Sleep(SLEEP_TIME);
+			Helpers.WaitFor(() => server.Connections.Count() != 2);
 			Assert.AreEqual(1, server.Connections.Count(), "One client disconnected");
 			Assert.AreEqual(2, server.Connections.First().Id, "Connection Id");
 
 			client2.Close();
-			System.Threading.Thread.Sleep(SLEEP_TIME);
+			Helpers.WaitFor(() => !server.Connections.Any());
 			Assert.AreEqual(0, server.Connections.Count(), "All clients disconnected");
 		}
 	}
