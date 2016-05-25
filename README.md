@@ -44,6 +44,10 @@ If your protocol so specifies, you can start in raw mode and then switch to leng
 only to receive a couple of fixed-length messages before returing to length-prefixed mode.
 	
 
+##How do I use it?
+See the [API documentation](https://github.com/aquamoth/SocketMessaging/wiki/API-documentation) on the Wiki-pages for a complete API documentation.
+
+
 ##How is it developed?
 *SocketMessaging* is build in *Visual Studio 2015* using C#. 
 It is developed in TDD and has a full set of test-coverage written in MsTest.
