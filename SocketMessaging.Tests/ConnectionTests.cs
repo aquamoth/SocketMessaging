@@ -7,6 +7,7 @@ using System.Text;
 using System.Diagnostics;
 using SocketMessaging.Server;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace SocketMessaging.Tests
 {
@@ -16,6 +17,7 @@ namespace SocketMessaging.Tests
 		const int SERVER_PORT = 7783;
 		readonly Server.TcpServer server;
 		TcpClient client = null;
+		readonly Random rnd = new Random();
 
 		public ConnectionTests()
 		{
@@ -48,6 +50,7 @@ namespace SocketMessaging.Tests
 
 			connectClient();
 			client.Disconnected += (s2, e2) => clientDisconnectedTriggered = true;
+			Helpers.WaitFor(() => client.IsConnected);
 
 			Assert.IsFalse(serverDisconnectedTriggered, "Connection should not trigger disconnected event before client disconnects.");
 			client.Close();
@@ -64,11 +67,10 @@ namespace SocketMessaging.Tests
 			Helpers.WaitFor(() => server.Connections.Any());
 			var serverConnection = server.Connections.Single();
 
-			var r = new Random();
 			var buffer1 = new byte[100];
-			r.NextBytes(buffer1);
+			rnd.NextBytes(buffer1);
 			var buffer2 = new byte[100];
-			r.NextBytes(buffer2);
+			rnd.NextBytes(buffer2);
 			var expectedBuffer = buffer1.Concat(buffer2).ToArray();
 
 			client.Send(buffer1);
@@ -96,11 +98,10 @@ namespace SocketMessaging.Tests
 			Helpers.WaitFor(() => server.Connections.Any());
 			var serverConnection = server.Connections.Single();
 
-			var r = new Random();
 			var buffer1 = new byte[100];
-			r.NextBytes(buffer1);
+			rnd.NextBytes(buffer1);
 			var buffer2 = new byte[100];
-			r.NextBytes(buffer2);
+			rnd.NextBytes(buffer2);
 			var expectedBuffer = buffer1.Concat(buffer2).ToArray();
 
 			serverConnection.Send(buffer1);
@@ -118,6 +119,87 @@ namespace SocketMessaging.Tests
 			}
 
 			CollectionAssert.AreEqual(expectedBuffer, buffer.ToArray());
+		}
+
+		[TestMethod]
+		[TestCategory("Connection")]
+		public void Polling_threads_are_threadsafe()
+		{
+			connectClient();
+			Helpers.WaitFor(() => server.Connections.Any());
+			var serverConnection = server.Connections.Single();
+
+			var targetBuffer = 140000;
+
+			Trace.TraceInformation("Starting threads");
+			var serverSendState = new ThreadSafeState(serverConnection, targetBuffer);
+			var serverSendThread = new Thread(new ParameterizedThreadStart(Polling_threads_are_threadsafe__Send));
+			serverSendThread.Start(serverSendState);
+
+			var clientReceiveState = new ThreadSafeState(client, targetBuffer);
+			var clientReceiveThread = new Thread(new ParameterizedThreadStart(Polling_threads_are_threadsafe__Receive));
+			clientReceiveThread.Start(clientReceiveState);
+
+			var clientSendState = new ThreadSafeState(client, targetBuffer);
+			var clientSendThread = new Thread(new ParameterizedThreadStart(Polling_threads_are_threadsafe__Send));
+			clientSendThread.Start(clientSendState);
+
+			var serverReceiveState = new ThreadSafeState(serverConnection, targetBuffer);
+			var serverReceiveThread = new Thread(Polling_threads_are_threadsafe__Receive);
+			serverReceiveThread.Start(serverReceiveState);
+
+			Trace.TraceInformation("Waiting for senders to complete");
+			serverSendThread.Join();
+			clientSendThread.Join();
+
+			Trace.TraceInformation("Waiting grace time before disconnecting");
+			Thread.Sleep(200);
+			serverConnection.Close();
+
+			Trace.TraceInformation("Waiting for receivers to complete");
+			clientReceiveThread.Join();
+			serverReceiveThread.Join();
+
+			Trace.TraceInformation("Asserting state");
+			Assert.IsTrue(serverSendState.Buffer.Count() >= serverSendState.TargetBuffer, "Server should send a big buffer");
+			CollectionAssert.AreEqual(serverSendState.Buffer.ToArray(), clientReceiveState.Buffer.ToArray(), "Client should have received what server sent");
+
+			Assert.IsTrue(clientSendState.Buffer.Count() >= clientSendState.TargetBuffer, "Client should send a big buffer");
+			CollectionAssert.AreEqual(clientSendState.Buffer.ToArray(), serverReceiveState.Buffer.ToArray(), "Server should have received what client sent");
+		}
+		private void Polling_threads_are_threadsafe__Send(object o)
+		{
+			var state = o as ThreadSafeState;
+			var count = 0;
+			while (count < state.TargetBuffer)
+			{
+				var buffer = new byte[rnd.Next(1000, 2000)];
+				rnd.NextBytes(buffer);
+				state.Connection.Send(buffer);
+				state.Buffer = state.Buffer.Concat(buffer);
+				count += buffer.Length;
+			}
+		}
+		private void Polling_threads_are_threadsafe__Receive(object o)
+		{
+			var state = o as ThreadSafeState;
+			while (state.Connection.IsConnected || state.Connection.Available > 0)
+			{
+				var buffer = state.Connection.Receive();
+				state.Buffer = state.Buffer.Concat(buffer).ToArray().AsQueryable();
+			}
+		}
+		class ThreadSafeState
+		{
+			public Connection Connection { get; set; }
+			public int TargetBuffer { get; private set; }
+			public IQueryable<byte> Buffer { get; set; }
+			public ThreadSafeState(Connection connection, int targetBuffer)
+			{
+				Connection = connection;
+				Buffer = new byte[0].AsQueryable();
+				TargetBuffer = targetBuffer;
+			}
 		}
 
 		[TestMethod]
@@ -173,7 +255,7 @@ namespace SocketMessaging.Tests
 			connectClient();
 
 			var buffer = new byte[500000];
-			new Random().NextBytes(buffer);
+			rnd.NextBytes(buffer);
 			client.Send(buffer);
 			Helpers.WaitFor(() => connectionBufferLength >= buffer.Length);
 
