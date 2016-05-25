@@ -14,18 +14,18 @@ Major benfits over the internal classes are:
   * Connections automatically poll their receive queue and triggers receive events when new data arrives
 
 2. Message-based communication based on four common configurations.
-  1. Raw communication of bytes. 
+  * Raw communication of bytes. 
     * No encoding. What you send is what you receive.
-	* In this mode you get exactly what Socket gives you, but you still get events when data arrives.
-  2. Delimiter-based messages
+    * In this mode you get exactly what Socket gives you, but you still get events when data arrives.
+  * Delimiter-based messages
     * Defaults to UTF8-encoded strings, but you choose encoding or send byte-arrays.
-	* Supports multi-byte message delimiter. Ending messages with `<CR>` or three dashes is no problem.
-	* Can send and receive any message. Delimiters found inside a message are escaped by a customizable escape-code. 
-		The escape-code is itself escaped if found naturally inside the message.
-  3. Length-prefixed messages
+    * Supports multi-byte message delimiter. Ending messages with `<CR>` or three dashes is no problem.
+    * Can send and receive any message. Delimiters found inside a message are escaped by a customizable escape-code. 
+    * The escape-code is itself escaped if found naturally inside the message.
+  * Length-prefixed messages
     * A 4-byte Int32 little-endian code prefixes all messages and describes how many bytes of message will follow.
-	* Overflow and underflow protection ensures all messages are within reasonable lengths.
-  4. Fixed-length messages
+    * Overflow and underflow protection ensures all messages are within reasonable lengths.
+  * Fixed-length messages
     * Useful if you know the exact length of one or more messages beforehand and still want receive-events triggered as messages arrives.
 
 	
@@ -49,7 +49,7 @@ only to receive a couple of fixed-length messages before returing to length-pref
 It is developed in TDD and has a full set of test-coverage written in MsTest.
 
 
-##How will *SocketMessaging* evolve?
+##How will SocketMessaging evolve?
 *SocketMessaging* was sprung from my own need of a simple nuget package to make TCP connections with minimal boilerplate 
 and send a couple of messages between a client and a server. As such, I don't intend to widen the envelope much more 
 than I currently have. The following items are on my to-do list though (in no particular order):
@@ -60,6 +60,8 @@ than I currently have. The following items are on my to-do list though (in no pa
 
 This said, I don't intend *SocketMessaging* to grow into a one-thing-do-all monolith. 
 Rather I see other packages may come to require *SocketMessaging* and build on it.
+
+Follow current progress in the [TODO](https://github.com/aquamoth/SocketMessaging/blob/master/TODO.txt) which is always updated.
 
 
 ##What if I find a bug?
@@ -78,7 +80,7 @@ Obs! I will only accept pull-requests if:
 * I deem the feature of public interest, 
 * the code holds good quality, 
 * there are accompanying tests that prove the new feature, and 
-* **all existing tests pass without being altered**.
+* **all tests pass**.
 
 
 ##How is SocketMessaging copyrighted and licensed?
@@ -89,7 +91,7 @@ If the license doesn't work for you, I welcome you to [contact me at mattias@tru
 
 
 ##Contributor License Agreement
-You must sign a Contribution License Agreement (CLA) before your PR will be merged. This a one-time requirement for projects copyrighted by Trustfall. You can read more about [Contribution License Agreements (CLA)](https://en.wikipedia.org/wiki/Contributor_License_Agreement) on Wikipedia.
+You must sign a Contribution License Agreement (CLA) before your PR will be merged. This a one-time requirement for projects copyrighted by Trustfall AB. You can read more about [Contribution License Agreements (CLA)](https://en.wikipedia.org/wiki/Contributor_License_Agreement) on Wikipedia.
 
 However, you don't have to do this up-front. You can simply clone, fork, and submit your pull-request as usual.
 
