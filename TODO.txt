@@ -5,6 +5,7 @@ o MaxMessageSize can be increased or lowered during communication and affects th
 	o Fixed sized messages should support longer than 65535 byte messages (initial MaxMessageSize of Connection)
 	o Should trigger a bad-message-format event when a message is larger than MaxMessageSize
 	o Should trigger a bad-message-format event when length-prefixed messages have negative length
+		(should length be uint32?)
 o Changing message encoding should change delimiter bytes IF set as char or string?
 o Connection must trigger event to stop/start sending due to slow client. Throw exception if not adhering
 o Async extensions
