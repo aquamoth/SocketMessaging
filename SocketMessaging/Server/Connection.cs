@@ -14,6 +14,8 @@ namespace SocketMessaging.Server
 
 		public int Available { get { return _rawQueue.Count; } }
 
+		public Socket Socket { get { return _socket; } }
+
 		public bool IsConnected
 		{
 			get
@@ -209,6 +211,7 @@ namespace SocketMessaging.Server
 
 		public void Close()
 		{
+			_socket.Shutdown(SocketShutdown.Both);
 			_socket.Close();
 			_socket = null;
 		}

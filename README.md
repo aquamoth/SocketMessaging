@@ -73,7 +73,7 @@ Please post bugs under [Issues](https://github.com/aquamoth/SocketMessaging/issu
 Since you are likely a developer yourself I invite you to solve the bug too and then file a [Pull Request](https://github.com/aquamoth/SocketMessaging/pulls).
 
 
-#What if I'm missing a feature?
+##What if I'm missing a feature?
 The easiest thing is to file a request under [Issues](https://github.com/aquamoth/SocketMessaging/issues) and then hope for the best.
 I make no committment to work on requests on my free time. [Contact me directly](mailto:mattias@trustfall.se) if you want to hire me to do a job.
 

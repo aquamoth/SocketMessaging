@@ -189,18 +189,6 @@ namespace SocketMessaging.Tests
 				state.Buffer = state.Buffer.Concat(buffer).ToArray().AsQueryable();
 			}
 		}
-		class ThreadSafeState
-		{
-			public Connection Connection { get; set; }
-			public int TargetBuffer { get; private set; }
-			public IQueryable<byte> Buffer { get; set; }
-			public ThreadSafeState(Connection connection, int targetBuffer)
-			{
-				Connection = connection;
-				Buffer = new byte[0].AsQueryable();
-				TargetBuffer = targetBuffer;
-			}
-		}
 
 		[TestMethod]
 		[TestCategory("Connection")]
@@ -287,5 +275,17 @@ namespace SocketMessaging.Tests
 			client = TcpClient.Connect(serverAddress, SERVER_PORT);
 		}
 
+		class ThreadSafeState
+		{
+			public Connection Connection { get; set; }
+			public int TargetBuffer { get; private set; }
+			public IQueryable<byte> Buffer { get; set; }
+			public ThreadSafeState(Connection connection, int targetBuffer)
+			{
+				Connection = connection;
+				Buffer = new byte[0].AsQueryable();
+				TargetBuffer = targetBuffer;
+			}
+		}
 	}
 }
