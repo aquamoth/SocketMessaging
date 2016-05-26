@@ -6,11 +6,11 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("SocketMessaging")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("Event-driven wrappers around System.Net.Sockets.Socket, that support different message protocols ontop of raw communication.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Trustfall AB, www.trustfall.se")]
 [assembly: AssemblyProduct("SocketMessaging")]
-[assembly: AssemblyCopyright("Copyright ©  2016")]
+[assembly: AssemblyCopyright("Copyright © 2016 Trustfall AB. All rights reserved. See LICENSE for details.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -23,4 +23,5 @@ using System.Runtime.InteropServices;
 [assembly: Guid("825c5e25-cd64-4637-8957-4050e736a87b")]
 
 [assembly: InternalsVisibleTo("SocketMessaging.Tests")]
-[assembly: AssemblyVersion("0.1.*")]
+[assembly: AssemblyVersion("1.0.*")]
+[assembly: AssemblyFileVersion("1.0.1.0")]

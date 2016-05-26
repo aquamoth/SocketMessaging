@@ -58,4 +58,7 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+  <Target Name="AfterBuild" Condition=" '$(Configuration)' == 'Release'">
+    <Exec Command="$(SolutionDir).nuget\nuget pack SocketMessaging.csproj -Prop Configuration=Release -OutputDirectory $(SolutionDir).nuget\"></Exec>
+  </Target>
 </Project>
