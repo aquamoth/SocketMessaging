@@ -12,7 +12,8 @@ namespace SocketMessaging.Server
 	{
 		public int Id { get; private set; }
 
-		public int Available { get { return _rawQueue.Count; } }
+        [Obsolete("Use Socket.Available instead")]
+		public int Available { get { return Socket.Available; } }
 
 		public Socket Socket { get { return _socket; } }
 
@@ -132,14 +133,28 @@ namespace SocketMessaging.Server
 			Send(buffer);
 		}
 
-		public byte[] Receive(int maxLength = 0)
-		{
-			var buffer = _rawQueue.Read(maxLength);
-			Helpers.DebugInfo("#{0}: Received {1} bytes from raw queue. Queue is now {2} bytes.", Id, buffer.Length, _rawQueue.Count);
-			return buffer;
-		}
+        public byte[] Receive(int maxLength = int.MaxValue, SocketFlags socketFlags = SocketFlags.None)
+        {
+            var bufferLength = Math.Min(Socket.Available, maxLength);
 
-		public byte[] ReceiveMessage()
+            var buffer = new byte[bufferLength];
+            if (bufferLength > 0)
+                Socket.Receive(buffer, socketFlags);
+
+            if (!socketFlags.HasFlag(SocketFlags.Peek))
+            {
+                _expectedBytesInReceiveBuffer -= bufferLength;
+
+                _indexOfNextMessageToReceive -= bufferLength;
+                if (_indexOfNextMessageToReceive < 0)
+                    _indexOfNextMessageToReceive = 0;
+            }
+
+            Helpers.DebugInfo("#{0}: Received {1} bytes from raw queue. Queue is now {2} bytes.", Id, buffer.Length, Socket.Available);
+            return buffer;
+        }
+
+        public byte[] ReceiveMessage()
 		{
 			switch (Mode)
 			{
@@ -154,7 +169,7 @@ namespace SocketMessaging.Server
 						var inEscapeMode = false;
 						do
 						{
-							var readBuffer = _rawQueue.ReadUntil(Delimiter, MaxMessageSize);
+							var readBuffer = readSocketUntil(Delimiter, MaxMessageSize);
 							if (readBuffer == null)
 							{
 								if (Available >= MaxMessageSize)
@@ -170,7 +185,7 @@ namespace SocketMessaging.Server
 
 				case MessageMode.FixedLength:
 					{
-						if (_rawQueue.Count < this.MaxMessageSize)
+						if (Socket.Available < this.MaxMessageSize)
 							return null;
 						var buffer = Receive(this.MaxMessageSize);
 						if (buffer.Length != this.MaxMessageSize)
@@ -180,17 +195,20 @@ namespace SocketMessaging.Server
 
 				case MessageMode.PrefixedLength:
 					{
-						if (_rawQueue.Count < 4)
-							return null;
-						
-						var messageSize = BitConverter.ToInt32(_rawQueue.Peek(0, 4), 0);
-						if (messageSize > MaxMessageSize)
-							throw new InvalidOperationException("Message is larger than max allowed message size.");
-						if (messageSize > _rawQueue.Count + 4)
-							return null;
+                        var messageSizeBuffer = Receive(4, SocketFlags.Peek);
+                        if (messageSizeBuffer.Length < 4)
+                            return null;
 
-						_rawQueue.Read(4);
-						var buffer = _rawQueue.Read(messageSize);
+                        var messageSize = BitConverter.ToInt32(messageSizeBuffer, 0);
+
+                        if (messageSize > MaxMessageSize)
+							throw new InvalidOperationException("Message is larger than max allowed message size.");
+
+                        if (messageSize > Socket.Available - 4)
+                            return null;
+
+                        Receive(4); //Read out the length prefix
+                        var buffer = Receive(messageSize);
 						return buffer;
 					}
 
@@ -202,7 +220,36 @@ namespace SocketMessaging.Server
 			}
 		}
 
-		public string ReceiveMessageString()
+        internal byte[] readSocketUntil(byte[] delimiter, int maxMessageSize)
+        {
+            var peekBuffer = Receive(Socket.Available, SocketFlags.Peek);
+
+            var delimiterIndex = 0;
+            var counter = 0;
+            var walker = 0;
+            while (walker < peekBuffer.Length && counter < maxMessageSize)
+            {
+                counter++;
+
+                if (peekBuffer[walker] == delimiter[delimiterIndex])
+                {
+                    delimiterIndex++;
+                    if (delimiterIndex == delimiter.Length)
+                        return Receive(counter);
+                }
+                else if (delimiterIndex != 0)
+                {
+                    counter -= delimiterIndex;
+                    walker -= delimiterIndex;
+                    delimiterIndex = 0;
+                }
+
+                walker++;
+            }
+            return null;
+        }
+
+        public string ReceiveMessageString()
 		{
 			return MessageEncoding.GetString(ReceiveMessage());
 		}
@@ -251,46 +298,45 @@ namespace SocketMessaging.Server
 				Helpers.DebugInfo("#{0} Connection disconnected", this.Id);
 				OnDisconnected(EventArgs.Empty);
 			}
-			else
-			{
-				readIntoRawQueue();
-			}
-		}
+            else if (_expectedBytesInReceiveBuffer > Socket.Available)
+            {
+                //If user tries to read directly from socket we don't really know what bytes have been seen!
+                throw new InvalidOperationException($"Expected at least {_expectedBytesInReceiveBuffer} bytes in receive buffer but found {Socket.Available}!");
+            }
+            else if (_expectedBytesInReceiveBuffer != Socket.Available)
+            {
+                _expectedBytesInReceiveBuffer = Socket.Available;
+                OnReceivedRaw(EventArgs.Empty);
 
-		private void readIntoRawQueue()
+                triggerNewReceivedMessageEvents();
+            }
+        }
+
+        private void triggerNewReceivedMessageEvents()
+        {
+            int unprocessedIndexOfBuffer;
+            var bufferWithPossibleNewMessages = Receive(Socket.Available, SocketFlags.Peek).Skip(_indexOfNextMessageToReceive).ToArray();
+            var numberOfNewMessages = numberOfNewMessagesInRawQueue(bufferWithPossibleNewMessages, out unprocessedIndexOfBuffer);
+            _indexOfNextMessageToReceive += unprocessedIndexOfBuffer;
+
+            for (var i = 0; i < numberOfNewMessages; i++)
+                OnReceivedMessage(EventArgs.Empty);
+        }
+
+        private int numberOfNewMessagesInRawQueue(byte[] buffer, out int nextIndexToSearchFrom)
 		{
-			if (_socket.Available == 0)
-				return;
-
-			if (_rawQueue.UnusedQueueLength <= 0)
-			{
-				Helpers.DebugInfo("#{0}: Not receiving {1} because queue is full.", Id, _socket.Available);
-				return;
-			}
-
-			var bufferSize = Math.Min(_rawQueue.UnusedQueueLength, _socket.Available);
-			var buffer = new byte[bufferSize];
-			Helpers.DebugInfo("#{0}: Reading {1} bytes into raw queue.", Id, bufferSize);
-			_socket.Receive(buffer);
-			_rawQueue.Write(buffer);
-
-			OnReceivedRaw(EventArgs.Empty);
-
-			var numberOfNewMessages = numberOfNewMessagesInRawQueue(buffer);
-			for (var i = 0; i < numberOfNewMessages; i++)
-				OnReceivedMessage(EventArgs.Empty);
-		}
-
-		private int numberOfNewMessagesInRawQueue(byte[] buffer)
-		{
-			switch (Mode)
+            nextIndexToSearchFrom = 0;
+            switch (Mode)
 			{
 				case MessageMode.Raw:
 					Helpers.DebugInfo("#{0}: In raw mode no new messages are found", Id);
-					return 0;
+                    return 0;
 
 				case MessageMode.DelimiterBound:
 					{
+                        if (Delimiter.Length == 0)
+                            throw new NotSupportedException("In Delimiter mode the Delimiter property must be non-empty!");
+
 						var index = 0;
 						var counter = 0;
 						while (index < buffer.Length)
@@ -300,7 +346,8 @@ namespace SocketMessaging.Server
 								//TODO: Should make sure there is no escapecode just before the delimiter
 								counter++;
 								index += Delimiter.Length;
-							}
+                                nextIndexToSearchFrom = index;
+                            }
 							else
 							{
 								index++;
@@ -311,36 +358,41 @@ namespace SocketMessaging.Server
 
 				case MessageMode.PrefixedLength:
 					{
-						var queueLengthBeforeBuffer = _rawQueue.Count - buffer.Length;
 						var peekPosition = 0;
 						var counter = 0;
-						while (peekPosition <= _rawQueue.Count - 4)
-						{
-							var messageSize = BitConverter.ToInt32(_rawQueue.Peek(peekPosition, 4), 0);
-							if (messageSize < 0) break; //This message is likely not meant to be read in current mode, so just abort counter
-							peekPosition += 4 + messageSize;
-							if (peekPosition >= queueLengthBeforeBuffer && peekPosition <= _rawQueue.Count)
-								counter++;
-						}
+                        while (peekPosition <= buffer.Length - 4)
+                        {
+                            var messageSize = BitConverter.ToInt32(buffer, peekPosition);
+                            if (messageSize < 0) break; //This message is likely not meant to be read in current mode, so just abort counter
+                            peekPosition += 4 + messageSize;
+                            if (peekPosition > buffer.Length)
+                                break;
+
+                            nextIndexToSearchFrom = peekPosition;
+                            counter++;
+                        }
 						return counter;
 					}
 
 				case MessageMode.FixedLength:
-					var pendingBytes = _rawQueue.Count % MaxMessageSize;
-					var count = (pendingBytes + buffer.Length) / MaxMessageSize;
-					Helpers.DebugInfo("#{0}: With {1} pending bytes and {2} new bytes, with {3} bytes message size, {4} new messages are identified.", Id, pendingBytes, buffer.Length, MaxMessageSize, count);
-					return count;
+                    {
+                        var lengthOfAllNewMessages = buffer.Length - (buffer.Length % MaxMessageSize);
 
-				default:
+                        var count = lengthOfAllNewMessages / MaxMessageSize;
+                        nextIndexToSearchFrom += lengthOfAllNewMessages;
+
+                        return count;
+                    }
+
+                default:
 					throw new NotSupportedException();
 			}
 		}
 
 		private void retriggerMessageReceivedEvents()
 		{
-			var numberOfNewMessages = numberOfNewMessagesInRawQueue(_rawQueue.Peek(0, _rawQueue.Count));
-			for (var i = 0; i < numberOfNewMessages; i++)
-				OnReceivedMessage(EventArgs.Empty);
+            _indexOfNextMessageToReceive = 0;
+            triggerNewReceivedMessageEvents();
 		}
 
 		internal byte[] appendEscapeCodes(byte[] buffer)
@@ -425,10 +477,10 @@ namespace SocketMessaging.Server
 			Delimiter = new byte[] { 0x0a }; //\n (<CR>) as default delimiter
 			Escapecode = Encoding.UTF8.GetBytes(@"\").Single();
 			MessageEncoding = Encoding.UTF8;
-			_rawQueue = new FixedSizedQueue(MaxMessageSize);
 		}
 
 		protected Socket _socket;
-		readonly FixedSizedQueue _rawQueue;
-	}
+        int _expectedBytesInReceiveBuffer = 0;
+        int _indexOfNextMessageToReceive = 0;
+    }
 }

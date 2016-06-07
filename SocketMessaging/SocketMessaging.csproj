@@ -40,7 +40,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="FixedSizedQueue.cs" />
     <Compile Include="Helpers.cs" />
     <Compile Include="MessageMode.cs" />
     <Compile Include="Server\ConnectionEventArgs.cs" />
@@ -59,6 +58,7 @@
   </Target>
   -->
   <Target Name="AfterBuild" Condition=" '$(Configuration)' == 'Release'">
-    <Exec Command="$(SolutionDir).nuget\nuget pack SocketMessaging.csproj -Prop Configuration=Release -OutputDirectory $(SolutionDir).nuget\"></Exec>
+    <Exec Command="$(SolutionDir).nuget\nuget pack SocketMessaging.csproj -Prop Configuration=Release -OutputDirectory $(SolutionDir).nuget\">
+    </Exec>
   </Target>
 </Project>
