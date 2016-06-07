@@ -6,14 +6,11 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SocketMessaging.Server
+namespace SocketMessaging
 {
 	public class Connection
 	{
 		public int Id { get; private set; }
-
-        [Obsolete("Use Socket.Available instead")]
-		public int Available { get { return Socket.Available; } }
 
 		public Socket Socket { get { return _socket; } }
 
@@ -48,11 +45,19 @@ namespace SocketMessaging.Server
 			}
 		}
 
-		#region Send and Receive
+        #region Send and Receive
 
-		public int MaxMessageSize { get; set; }
+        public int MaxMessageSize {
+            get { return _maxMessageSize; }
+            set {
+                _maxMessageSize = value;
+                if (_maxMessageSize > Socket.ReceiveBufferSize)
+                    Socket.ReceiveBufferSize = _maxMessageSize;
+            }
+        }
+        int _maxMessageSize = 0;
 
-		public MessageMode Mode { get; protected set; }
+        public MessageMode Mode { get; protected set; }
 		public void SetMode(MessageMode newMode)
 		{
 			Mode = newMode;
@@ -172,7 +177,7 @@ namespace SocketMessaging.Server
 							var readBuffer = readSocketUntil(Delimiter, MaxMessageSize);
 							if (readBuffer == null)
 							{
-								if (Available >= MaxMessageSize)
+								if (Socket.Available >= MaxMessageSize)
 									throw new InvalidOperationException("Message is larger than max allowed message size.");
 								return null;
 							}
@@ -268,14 +273,14 @@ namespace SocketMessaging.Server
 		public event EventHandler ReceivedRaw;
 		protected virtual void OnReceivedRaw(EventArgs e)
 		{
-			Helpers.DebugInfo("#{0}: Connection received {1} bytes", this.Id, this.Available);
+			Helpers.DebugInfo("#{0}: Connection received {1} bytes", this.Id, Socket.Available);
 			ReceivedRaw?.Invoke(this, e);
 		}
 
 		public event EventHandler ReceivedMessage;
 		protected virtual void OnReceivedMessage(EventArgs e)
 		{
-			Helpers.DebugInfo("#{0}: Connection received a new message", this.Id, this.Available);
+			Helpers.DebugInfo("#{0}: Connection received a new message", this.Id, Socket.Available);
 			ReceivedMessage?.Invoke(this, e);
 		}
 		
@@ -473,8 +478,8 @@ namespace SocketMessaging.Server
 		{
 			Id = id;
 			_socket = socket;
-			MaxMessageSize = 65535; //Same size as default socket window
-			Delimiter = new byte[] { 0x0a }; //\n (<CR>) as default delimiter
+            MaxMessageSize = socket.ReceiveBufferSize;
+            Delimiter = new byte[] { 0x0a }; //\n (<CR>) as default delimiter
 			Escapecode = Encoding.UTF8.GetBytes(@"\").Single();
 			MessageEncoding = Encoding.UTF8;
 		}

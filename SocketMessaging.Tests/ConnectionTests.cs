@@ -80,8 +80,8 @@ namespace SocketMessaging.Tests
 			var actualLength = 0;
 			while (actualLength < expectedBuffer.Length)
 			{
-				Helpers.WaitFor(() => serverConnection.Available > 0);
-				Assert.IsTrue(serverConnection.Available > 0, "Server should receive packet.");
+				Helpers.WaitFor(() => serverConnection.Socket.Available > 0);
+				Assert.IsTrue(serverConnection.Socket.Available > 0, "Server should receive packet.");
 				var data = serverConnection.Receive();
 				buffer = buffer.Concat(data);
 				actualLength += data.Length;
@@ -111,8 +111,8 @@ namespace SocketMessaging.Tests
 			var actualLength = 0;
 			while (actualLength < expectedBuffer.Length)
 			{
-				Helpers.WaitFor(() => client.Available > 0);
-				Assert.IsTrue(client.Available > 0, "Client should receive packets.");
+				Helpers.WaitFor(() => client.Socket.Available > 0);
+				Assert.IsTrue(client.Socket.Available > 0, "Client should receive packets.");
 				var data = client.Receive();
 				buffer = buffer.Concat(data);
 				actualLength += data.Length;
@@ -183,7 +183,7 @@ namespace SocketMessaging.Tests
 		private void Polling_threads_are_threadsafe__Receive(object o)
 		{
 			var state = o as ThreadSafeState;
-			while (state.Connection.IsConnected || state.Connection.Available > 0)
+			while (state.Connection.IsConnected || state.Connection.Socket.Available > 0)
 			{
 				var buffer = state.Connection.Receive();
 				state.Buffer = state.Buffer.Concat(buffer).ToArray().AsQueryable();

@@ -42,8 +42,8 @@
   <ItemGroup>
     <Compile Include="Helpers.cs" />
     <Compile Include="MessageMode.cs" />
-    <Compile Include="Server\ConnectionEventArgs.cs" />
-    <Compile Include="Server\Connection.cs" />
+    <Compile Include="ConnectionEventArgs.cs" />
+    <Compile Include="Connection.cs" />
     <Compile Include="TcpClient.cs" />
     <Compile Include="Server\TcpListenerEx.cs" />
     <Compile Include="Server\TcpServer.cs" />

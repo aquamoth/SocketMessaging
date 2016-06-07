@@ -8,7 +8,6 @@ namespace SocketMessaging.Tests
 	[TestClass]
 	public class MessagingTests : IDisposable
 	{
-		const int DEFAULT_MAX_MESSAGE_SIZE = 65535;
 		const int SERVER_PORT = 7783;
 		readonly Server.TcpServer server;
 		readonly TcpClient client = null;
@@ -80,7 +79,7 @@ namespace SocketMessaging.Tests
 		{
 			var receivedMessageCounter = 0;
 
-			Assert.AreEqual(DEFAULT_MAX_MESSAGE_SIZE, client.MaxMessageSize, "Connection should have a sane default max message size");
+			Assert.IsTrue(client.MaxMessageSize <= 65536, $"Expected clients initial MaxMessageSize <= 65536 but got {client.MaxMessageSize}.");
 			client.MaxMessageSize = 10;
 			client.SetMode(MessageMode.FixedLength);
 			client.ReceivedMessage += (s, e) => { receivedMessageCounter++; };
@@ -108,7 +107,30 @@ namespace SocketMessaging.Tests
 			CollectionAssert.AreEqual(sentMessage.Skip(2 * client.MaxMessageSize).Take(client.MaxMessageSize).ToArray(), receivedMessage, "Third message wasn't correctly received");
 		}
 
-		[TestMethod]
+        [TestMethod]
+        [TestCategory("Connection: Messages")]
+        public void Can_receive_large_fixed_length_message()
+        {
+            var receivedMessageCounter = 0;
+            var sentMessage = new byte[2 * 1024 * 1024]; //2MB message
+            new Random().NextBytes(sentMessage);
+
+            client.MaxMessageSize = sentMessage.Length;
+            client.SetMode(MessageMode.FixedLength);
+            client.ReceivedMessage += (s, e) => { receivedMessageCounter++; };
+
+            Helpers.WaitFor(() => server.Connections.Any());
+            var serverConnection = server.Connections.Single();
+
+            serverConnection.Send(sentMessage);
+
+            Helpers.WaitFor(() => receivedMessageCounter >= 1);
+            Assert.AreEqual(1, receivedMessageCounter, "Client should trigger one message received event");
+            var receivedMessage = client.ReceiveMessage();
+            CollectionAssert.AreEqual(sentMessage, receivedMessage, "Message wasn't correctly received");
+        }
+
+        [TestMethod]
 		public void Can_change_delimiter()
 		{
 			CollectionAssert.AreEqual(new byte[] { 0x0a }, client.Delimiter);
@@ -140,7 +162,7 @@ namespace SocketMessaging.Tests
 			var sentMessage = Guid.NewGuid().ToString();
 			serverConnection.Send(sentMessage);
 
-			Helpers.WaitFor(() => client.Available > 0);
+			Helpers.WaitFor(() => client.Socket.Available > 0);
 			receivedMessageCounter = 0;
 			client.SetDelimiter(serverConnection.Delimiter);
 			CollectionAssert.AreEqual(new byte[] { 0x20 }, client.Delimiter);
@@ -559,7 +581,7 @@ Onfest Radestone, þer he bock radde.
 			var serverConnection = server.Connections.Single();
 			serverConnection.Send(BitConverter.GetBytes(-100));
 			serverConnection.Send(new byte[] { 75 });
-			Helpers.WaitFor(() => client.Available >= 4);
+			Helpers.WaitFor(() => client.Socket.Available >= 4);
 
 			//This should not throw exception when checking existing buffer for valid messages
 			client.SetMode(MessageMode.PrefixedLength);
@@ -606,7 +628,7 @@ Onfest Radestone, þer he bock radde.
 
 
 			//Receive a raw chunk
-			Helpers.WaitFor(() => client.Available >= sentBuffer1.Length);
+			Helpers.WaitFor(() => client.Socket.Available >= sentBuffer1.Length);
 			var receivedBuffer1 = client.Receive(sentBuffer1.Length);
 			CollectionAssert.AreEqual(sentBuffer1, receivedBuffer1, "First chunk differs.");
 
@@ -638,11 +660,11 @@ Onfest Radestone, þer he bock radde.
 
 			//Finish off receiving yet another raw chunk
 			client.SetMode(MessageMode.Raw);
-			Helpers.WaitFor(() => client.Available >= sentBuffer5.Length);
+			Helpers.WaitFor(() => client.Socket.Available >= sentBuffer5.Length);
 			var receivedBuffer5 = client.Receive(sentBuffer5.Length);
 			CollectionAssert.AreEqual(sentBuffer5, receivedBuffer5, "Last raw chunk differs.");
 
-			Assert.AreEqual(0, client.Available, "The receive queue should be empty after last raw chunk is read.");
+			Assert.AreEqual(0, client.Socket.Available, "The receive queue should be empty after last raw chunk is read.");
 		}
 
 		[TestMethod]
@@ -659,7 +681,7 @@ Onfest Radestone, þer he bock radde.
 
 			client.MaxMessageSize = 10;
 			client.SetMode(MessageMode.DelimiterBound);
-			Helpers.WaitFor(() => client.Available >= message.Length);
+			Helpers.WaitFor(() => client.Socket.Available >= message.Length);
 			var receivedMessage = client.ReceiveMessageString();
 		}
 
@@ -677,7 +699,7 @@ Onfest Radestone, þer he bock radde.
 
 			client.MaxMessageSize = 10;
 			client.SetMode(MessageMode.PrefixedLength);
-			Helpers.WaitFor(() => client.Available >= message.Length);
+			Helpers.WaitFor(() => client.Socket.Available >= message.Length);
 			var receivedMessage = client.ReceiveMessageString();
 		}
 

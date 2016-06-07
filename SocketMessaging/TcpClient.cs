@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace SocketMessaging
 {
-	public class TcpClient : Server.Connection//, IDisposable
+	public class TcpClient : Connection//, IDisposable
 	{
 		private TcpClient(Socket socket) 
 			: base(0, socket)

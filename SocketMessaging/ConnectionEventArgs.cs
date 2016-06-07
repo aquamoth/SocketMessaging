@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SocketMessaging.Server
+namespace SocketMessaging
 {
 	public class ConnectionEventArgs : EventArgs
 	{
