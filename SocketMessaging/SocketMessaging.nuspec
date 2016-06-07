@@ -8,7 +8,7 @@
     <owners>$author$</owners>
     <licenseUrl>https://github.com/aquamoth/SocketMessaging/blob/master/LICENSE</licenseUrl>
     <projectUrl>https://github.com/aquamoth/SocketMessaging</projectUrl>
-    <iconUrl>https://github.com/aquamoth/SocketMessaging/SocketMessaging.png</iconUrl>
+    <iconUrl>https://github.com/aquamoth/SocketMessaging/blob/master/SocketMessaging.png</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>$description$</description>
     <!--<releaseNotes></releaseNotes>-->
