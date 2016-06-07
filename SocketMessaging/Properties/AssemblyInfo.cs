@@ -23,5 +23,5 @@ using System.Runtime.InteropServices;
 [assembly: Guid("825c5e25-cd64-4637-8957-4050e736a87b")]
 
 [assembly: InternalsVisibleTo("SocketMessaging.Tests")]
-[assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyFileVersion("1.0.1.0")]
+[assembly: AssemblyVersion("1.1.*")]
+[assembly: AssemblyFileVersion("1.1.0.0")]
