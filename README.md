@@ -1,4 +1,6 @@
-# SocketMessaging [![Build status](https://ci.appveyor.com/api/projects/status/0njuuy7yipkusi18/branch/master?svg=true)](https://ci.appveyor.com/project/aquamoth/socketmessaging/branch/master)
+# ![SocketMessaging logo](https://github.com/aquamoth/SocketMessaging/blob/master/SocketMessaging.png) SocketMessaging
+[![Build status](https://ci.appveyor.com/api/projects/status/0njuuy7yipkusi18/branch/master?svg=true)](https://ci.appveyor.com/project/aquamoth/socketmessaging/branch/master)
+
 *SocketMessaging* is a package with wrappers around `System.Net.Sockets.Socket`, much like the C# internal classes `TcpClient` and `TcpListener`.
 Major benfits over the internal classes are:
 * Event-driven design.
