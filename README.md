@@ -6,7 +6,7 @@ Major benfits over the internal classes are:
 
 
 ##What is it for?
-*SocketMessaging* solves two major problems:
+*SocketMessaging* solves two problems:
 
 1. Event-driven syntax
   * The TcpServer automatically accepts new connections
@@ -91,7 +91,11 @@ Obs! I will only accept pull-requests if:
 *SocketMessaging* is copyright [Trustfall AB, Sweden](http://www.trustfall.se) and licensed under the MIT-license. 
 Read the license details in the file [LICENSE](https://github.com/aquamoth/SocketMessaging/blob/master/LICENSE) included in the project.
 
-If the license doesn't work for you, I welcome you to [contact me at mattias@trustfall.se](mailto:mattias@trustfall.se) for alternatives to your liking.
+Package icon used for Nuget made by <a href="http://www.flaticon.com/authors/gregor-cresnar" title="Gregor Cresnar">Gregor Cresnar</a> 
+from <a href="http://www.flaticon.com" title="Flaticon">www.flaticon.com</a> 
+is licensed by <a href="http://creativecommons.org/licenses/by/3.0/" title="Creative Commons BY 3.0" target="_blank">CC 3.0 BY</a>
+
+If the licenses don't work for you, I welcome you to [contact me at mattias@trustfall.se](mailto:mattias@trustfall.se) for alternatives to your liking.
 
 
 ##Contributor License Agreement
