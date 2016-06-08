@@ -6,6 +6,9 @@ Major benfits over the internal classes are:
 * Event-driven design.
 * Message-based communication with several supported types of protocols.
 
+###NuGet Installation
+
+    Install-Package SocketMessaging
 
 ##What is it for?
 *SocketMessaging* solves two problems:
