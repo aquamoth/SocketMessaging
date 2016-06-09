@@ -11,6 +11,8 @@
     <AssemblyName>SocketMessaging</AssemblyName>
     <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -20,6 +22,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Debug\SocketMessaging.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -28,6 +31,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Release\SocketMessaging.XML</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -49,6 +53,9 @@
     <Compile Include="Server\TcpServer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
@@ -60,5 +67,12 @@
   <Target Name="AfterBuild" Condition=" '$(Configuration)' == 'Release'">
     <Exec Command="$(SolutionDir).nuget\nuget pack SocketMessaging.csproj -Prop Configuration=Release -OutputDirectory $(SolutionDir).nuget\">
     </Exec>
+  </Target>
+  <Import Project="..\packages\PxtlCa.XmlCommentMarkDownGenerator.0.1.5977.4914\build\PxtlCa.XmlCommentMarkDownGenerator.targets" Condition="Exists('..\packages\PxtlCa.XmlCommentMarkDownGenerator.0.1.5977.4914\build\PxtlCa.XmlCommentMarkDownGenerator.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\PxtlCa.XmlCommentMarkDownGenerator.0.1.5977.4914\build\PxtlCa.XmlCommentMarkDownGenerator.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\PxtlCa.XmlCommentMarkDownGenerator.0.1.5977.4914\build\PxtlCa.XmlCommentMarkDownGenerator.targets'))" />
   </Target>
 </Project>
