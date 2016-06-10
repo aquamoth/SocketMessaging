@@ -9,6 +9,22 @@ using System.Threading.Tasks;
 
 namespace SocketMessaging
 {
+    /// <summary>
+    /// The TcpClient is used establish a connection with a tcp server. 
+    /// It is not confined to talking to TcpServer's but can connect 
+    /// and exchange messages with any tcp server.
+    /// After the connection is established TcpClient's main responsibility 
+    /// is to driver the Connection's protected Poll() method that receives 
+    /// messages and identifies closed connections.
+    /// </summary>
+    /// <example>@code
+    /// var serverAddress = Server.Net.Dns.GetHostAddresses("chatbot.example.com").First();
+    /// var serverPort = 80;
+    /// var client = TcpClient.Connect(serverAddress, serverPort);
+    /// var data = client.Receive();
+    /// client.Send(data);
+    /// client.Close();
+    /// @endcode</example>
 	public class TcpClient : Connection//, IDisposable
 	{
 		private TcpClient(Socket socket) 
@@ -79,7 +95,13 @@ namespace SocketMessaging
 		internal Thread _pollThread = null;
 		const int POLLTHREAD_SLEEP = 20;
 
-
+        /// <summary>
+        /// Connects to a server and returns a TcpClient that handles the lifetime 
+        /// of the connection.
+        /// </summary>
+        /// <param name="address">The ip address to connect to.</param>
+        /// <param name="port">The tcp port to connect to.</param>
+        /// <returns>An established connection to the server.</returns>
 		public static TcpClient Connect(IPAddress address, int port)
 		{
 			var socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
