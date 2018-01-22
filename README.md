@@ -14,24 +14,24 @@ Major benfits over the internal classes are:
 *SocketMessaging* solves two problems:
 
 1. Event-driven syntax
-  * The TcpServer automatically accepts new connections
-  * The TcpServer triggers events as clients connect and disconnect
-  * Connections automatically poll their receive queue and triggers receive events when new data arrives
+	* The TcpServer automatically accepts new connections
+	* The TcpServer triggers events as clients connect and disconnect
+	* Connections automatically poll their receive queue and triggers receive events when new data arrives
 
 2. Message-based communication based on four common configurations.
-  * Raw communication of bytes. 
-    * No encoding. What you send is what you receive.
-    * In this mode you get exactly what Socket gives you, but you still get events when data arrives.
-  * Delimiter-based messages
-    * Defaults to UTF8-encoded strings, but you choose encoding or send byte-arrays.
-    * Supports multi-byte message delimiter. Ending messages with `<CR>` or three dashes is no problem.
-    * Can send and receive any message. Delimiters found inside a message are escaped by a customizable escape-code. 
-    * The escape-code is itself escaped if found naturally inside the message.
-  * Length-prefixed messages
-    * A 4-byte Int32 little-endian code prefixes all messages and describes how many bytes of message will follow.
-    * Overflow and underflow protection ensures all messages are within reasonable lengths.
-  * Fixed-length messages
-    * Useful if you know the exact length of one or more messages beforehand and still want receive-events triggered as messages arrives.
+	1. Raw communication of bytes. 
+		* No encoding. What you send is what you receive.
+		* In this mode you get exactly what Socket gives you, but you still get events when data arrives.
+	2. Delimiter-based messages
+		* Defaults to UTF8-encoded strings, but you choose encoding or send byte-arrays.
+		* Supports multi-byte message delimiter. Ending messages with `<CR>` or three dashes is no problem.
+		* Can send and receive any message. Delimiters found inside a message are escaped by a customizable escape-code. 
+		* The escape-code is itself escaped if found naturally inside the message.
+	3. Length-prefixed messages
+		* A 4-byte Int32 little-endian code prefixes all messages and describes how many bytes of message will follow.
+		* Overflow and underflow protection ensures all messages are within reasonable lengths.
+	4. Fixed-length messages
+		* Useful if you know the exact length of one or more messages beforehand and still want receive-events triggered as messages arrives.
 
 	
 ## Is it resilient to malicious messages?
