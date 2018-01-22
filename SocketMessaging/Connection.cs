@@ -8,6 +8,13 @@ using System.Threading.Tasks;
 
 namespace SocketMessaging
 {
+    /// <summary>
+    /// The Connection wraps a Socket. It is responsible for maintaining the connection and handle the polling logic for the receive buffer. Especially important is to trigger events as messages are received or the connection is closed.
+    /// The Connection is not meant to be instanced manually but is base class to TcpClient and is contained in the TcpServer's Connections enumeration.
+    /// </summary>
+    /// <remarks>
+    /// While it contains the polling logic in its protected Poll() method Connection is not driving the polling with its own thread. That functionality is delegated to the classes that uses it.
+    /// </remarks>
 	public class Connection
 	{
 		public int Id { get; private set; }
