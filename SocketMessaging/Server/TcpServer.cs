@@ -60,24 +60,28 @@ namespace SocketMessaging.Server
 			if (_pollThread != null)
 				throw new InvalidOperationException("Polling thread already exists.");
 
-			_pollThread = new Thread(new ThreadStart(pollThread_run))
+			_pollThread = new Thread(new ParameterizedThreadStart(pollThread_run))
 			{
 				Name = "PollThread",
 				IsBackground = true
 			};
 
-			_pollThread.Start();
+            _pollThreadCancellationTokenSource = new CancellationTokenSource();
+			_pollThread.Start(_pollThreadCancellationTokenSource.Token);
 		}
 
 		private void stopPollingThread()
 		{
-			_pollThread.Abort();
+            _pollThreadCancellationTokenSource.Cancel();
+            _pollThread.Join();
 			_pollThread = null;
 		}
 
-		private void pollThread_run()
+		private void pollThread_run(object parameter)
 		{
-			while (true)
+            var cancellationToken = (CancellationToken)parameter;
+
+            while (!cancellationToken.IsCancellationRequested)
 			{
 				acceptPendingConnections();
 
@@ -111,7 +115,8 @@ namespace SocketMessaging.Server
 
 		TcpListenerEx _listener = null;
 		internal Thread _pollThread = null;
-		readonly HashSet<Connection> _connections;
+        CancellationTokenSource _pollThreadCancellationTokenSource;
+        readonly HashSet<Connection> _connections;
 		int _connectionsSinceStart;
 		const int POLLTHREAD_SLEEP = 20;
 	}

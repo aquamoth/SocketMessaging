@@ -39,7 +39,7 @@ namespace SocketMessaging.Tests
 			server.Stop();
 			Assert.IsFalse(server.IsStarted);
 			Assert.IsFalse(Helpers.IsTcpPortListening(SERVER_PORT), "Port should be closed when server has stopped.");
-			Assert.AreEqual(System.Threading.ThreadState.Aborted, serverPollThread.ThreadState, "Polling thread stops when server stops.");
+			Assert.AreEqual(System.Threading.ThreadState.Stopped, serverPollThread.ThreadState, "Polling thread stops when server stops.");
 
 			server.Start(SERVER_PORT);
 			Assert.IsTrue(server.IsStarted);
