@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk" InitialTargets="SetVersion">
   <PropertyGroup>
     <ProjectGuid>{825C5E25-CD64-4637-8957-4050E736A87B}</ProjectGuid>
     <TargetFrameworks>netstandard20;net451</TargetFrameworks>
@@ -7,10 +7,8 @@
     <Product>SocketMessaging</Product>
     <Description>Event-driven wrappers around System.Net.Sockets.Socket, that support different message protocols ontop of raw communication.</Description>
     <Copyright>Copyright 2016 Trustfall AB</Copyright>
-    <Deterministic>false</Deterministic>
-    <Version>1.2.0</Version>
-    <AssemblyVersion>1.2.0</AssemblyVersion>
-    <FileVersion>1.2.0.0</FileVersion>
+    <Deterministic>true</Deterministic>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <DocumentationFile>bin\$(Configuration)\SocketMessaging.XML</DocumentationFile>
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <BuildDependsOn>$(BuildDependsOn);AfterBuildMigrated</BuildDependsOn>
@@ -31,5 +29,10 @@
   </Target>
   <ItemGroup>
     <PackageReference Include="Doxygen" Version="1.8.9.2" />
+    <PackageReference Include="gitinfo" Version="2.0.20">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
+  <Import Project="Version.targets" />
 </Project>

@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Target Name="GitVersion">
+    <PropertyGroup>
+      <!-- Dummy values allow dotnet restore to progress -->
+      <GitBaseVersionMajor>0</GitBaseVersionMajor>
+      <GitBaseVersionMinor>1</GitBaseVersionMinor>
+      <GitBaseVersionPatch>0</GitBaseVersionPatch>
+      <GitCommits>0</GitCommits>
+    </PropertyGroup>
+  </Target>
+  <Target Name="SetVersion" DependsOnTargets="GitVersion">
+    <PropertyGroup>
+      <!-- CI checkouts may be against a specific commit, not a branch, so add -pr as label -->
+      <GitSemVerDashLabel Condition="'$(GitBranch)' == 'undefined'">$(GitSemVerDashLabel)-pr</GitSemVerDashLabel>
+      <GitSemVerDashLabel Condition="'$(GitBranch)' != 'undefined' And '$(GitBranch)' != 'master'">$(GitSemVerDashLabel)-$(GitBranch)</GitSemVerDashLabel>
+      <!-- If there's no label, but we're not at the tip of the base version, add a -pre because this is not the base build -->
+      <!--<GitSemVerDashLabel Condition="'$(GitSemVerDashLabel)' == '' And '$(GitCommits)' != '0'">-pre</GitSemVerDashLabel>-->
+      <PackageVersion Condition="'$(GitSemVerDashLabel)' == ''">$(GitSemVerMajor).$(GitSemVerMinor).$(GitSemVerPatch)</PackageVersion>
+      <PackageVersion Condition="'$(GitSemVerDashLabel)' != ''">$(GitSemVerMajor).$(GitSemVerMinor).$(GitSemVerPatch)$(GitSemVerDashLabel).$(GitCommit)</PackageVersion>
+      <Version>$(GitSemVerMajor).$(GitSemVerMinor).$(GitSemVerPatch)</Version>
+      <InformationalVersion>$(GitSemVerMajor).$(GitSemVerMinor).$(GitSemVerPatch)$(GitSemVerDashLabel)+$(GitCommit)</InformationalVersion>
+    </PropertyGroup>
+  </Target>
+</Project>
