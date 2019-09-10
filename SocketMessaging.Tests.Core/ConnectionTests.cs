@@ -179,7 +179,7 @@ namespace SocketMessaging.Tests.Core
 		private void Polling_threads_are_threadsafe__Receive(object o)
 		{
 			var state = o as ThreadSafeState;
-			while (state.Connection.IsConnected || state.Connection.Socket.Available > 0)
+			while (state.Connection.IsConnected || state.Connection.Socket?.Available > 0)
 			{
 				var buffer = state.Connection.Receive();
 				state.Buffer = state.Buffer.Concat(buffer).ToArray().AsQueryable();
