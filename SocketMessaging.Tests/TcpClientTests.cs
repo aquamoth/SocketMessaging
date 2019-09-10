@@ -5,7 +5,7 @@ using Xunit;
 
 //[assembly: CollectionBehavior(CollectionBehavior.CollectionPerAssembly)]
 
-namespace SocketMessaging.Tests.Core
+namespace SocketMessaging.Tests
 {
     [Collection("Sequential")]
     public class TcpClientTests : IDisposable

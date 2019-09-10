@@ -3,7 +3,7 @@ using System.Linq;
 using System.Net;
 using Xunit;
 
-namespace SocketMessaging.Tests.Core
+namespace SocketMessaging.Tests
 {
     [Collection("Sequential")]
     public class MessagingTests : IDisposable

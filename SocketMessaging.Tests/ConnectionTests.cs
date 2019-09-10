@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Xunit;
 
-namespace SocketMessaging.Tests.Core
+namespace SocketMessaging.Tests
 {
     [Collection("Sequential")]
     public class ConnectionTests : IDisposable

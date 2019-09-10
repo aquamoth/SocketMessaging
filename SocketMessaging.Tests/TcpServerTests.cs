@@ -4,7 +4,7 @@ using Xunit;
 using SocketMessaging.Server;
 using System.Linq;
 
-namespace SocketMessaging.Tests.Core
+namespace SocketMessaging.Tests
 {
     [Collection("Sequential")]
     public class TcpServerTests : IDisposable
