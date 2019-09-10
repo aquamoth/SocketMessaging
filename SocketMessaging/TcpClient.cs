@@ -52,36 +52,36 @@ namespace SocketMessaging
 			if (_pollThread != null)
 				throw new InvalidOperationException("Polling thread already exists.");
 
-			_pollThread = new Thread(new ThreadStart(pollThread_run))
+			_pollThread = new Thread(new ParameterizedThreadStart(pollThread_run))
 			{
 				Name = "PollThread",
 				IsBackground = true
 			};
 
-			_pollThread.Start();
+            _pollThreadCancellationTokenSource = new CancellationTokenSource();
+            _pollThread.Start(_pollThreadCancellationTokenSource.Token);
 		}
 
 		private void stopPollingThread()
 		{
-			_pollThread.Abort();
-			_pollThread = null;
+            _pollThreadCancellationTokenSource.Cancel();
+            _pollThread.Join();
+            _pollThread = null;
 		}
 
-		private void pollThread_run()
+		private void pollThread_run(object parameter)
 		{
-			try
-			{
+            var cancellationToken = (CancellationToken)parameter;
 
+            try
+            {
 				Helpers.DebugInfo("#{0}: Polling thread started", Id);
-				while (true)
-				{
-					//Helpers.DebugInfo("#{0}: Polling...", Id);
-					this.Poll();
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    //Helpers.DebugInfo("#{0}: Polling...", Id);
+                    this.Poll();
 					Thread.Sleep(POLLTHREAD_SLEEP);
 				}
-			}
-			catch (ThreadAbortException)
-			{
 				Helpers.DebugInfo("#{0}: Polling thread stopped.", Id);
 			}
 			catch (Exception ex)
@@ -93,7 +93,8 @@ namespace SocketMessaging
 		#endregion Private methods
 
 		internal Thread _pollThread = null;
-		const int POLLTHREAD_SLEEP = 20;
+        CancellationTokenSource _pollThreadCancellationTokenSource;
+        const int POLLTHREAD_SLEEP = 20;
 
         /// <summary>
         /// Connects to a server and returns a TcpClient that handles the lifetime 

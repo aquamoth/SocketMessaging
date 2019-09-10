@@ -41,8 +41,8 @@ namespace SocketMessaging.Tests
 			var clientPollThread = client._pollThread;
 			client.Close();
 			Assert.IsFalse(client.IsConnected, "IsConnected should be false after disconnection.");
-			Helpers.WaitFor(() => clientPollThread.ThreadState == System.Threading.ThreadState.Aborted);
-			Assert.AreEqual(System.Threading.ThreadState.Aborted, clientPollThread.ThreadState, "Polling thread stops when client disconnects");
+			Helpers.WaitFor(() => clientPollThread.ThreadState == System.Threading.ThreadState.Stopped);
+			Assert.AreEqual(System.Threading.ThreadState.Stopped, clientPollThread.ThreadState, "Polling thread stops when client disconnects");
 		}
 
 		[TestMethod]
