@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28307.271
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocketMessaging", "SocketMessaging\SocketMessaging.csproj", "{825C5E25-CD64-4637-8957-4050E736A87B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SocketMessaging", "SocketMessaging\SocketMessaging.csproj", "{825C5E25-CD64-4637-8957-4050E736A87B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocketMessaging.Tests", "SocketMessaging.Tests\SocketMessaging.Tests.csproj", "{D21AB474-7378-4A85-AACC-780782550288}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SocketMessaging.Tests", "SocketMessaging.Tests\SocketMessaging.Tests.csproj", "{D21AB474-7378-4A85-AACC-780782550288}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{58E8E2AA-3A30-4C6C-949A-27B24F86151A}"
 	ProjectSection(SolutionItems) = preProject
@@ -18,7 +18,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{C72A7BD5-164D-4365-911B-45976A2E6BE1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Simple_tcp_server", "Samples\Simple_tcp_server\Simple_tcp_server.csproj", "{2AF1B60C-6127-4997-B4EC-706449CD86D9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Simple_tcp_server", "Samples\Simple_tcp_server\Simple_tcp_server.csproj", "{2AF1B60C-6127-4997-B4EC-706449CD86D9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocketMessaging.Tests.Core", "SocketMessaging.Tests.Core\SocketMessaging.Tests.Core.csproj", "{DD7DFB20-4EA2-4C61-83AE-C5ED76A98F91}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -38,6 +40,10 @@ Global
 		{2AF1B60C-6127-4997-B4EC-706449CD86D9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2AF1B60C-6127-4997-B4EC-706449CD86D9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2AF1B60C-6127-4997-B4EC-706449CD86D9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DD7DFB20-4EA2-4C61-83AE-C5ED76A98F91}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DD7DFB20-4EA2-4C61-83AE-C5ED76A98F91}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DD7DFB20-4EA2-4C61-83AE-C5ED76A98F91}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DD7DFB20-4EA2-4C61-83AE-C5ED76A98F91}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
