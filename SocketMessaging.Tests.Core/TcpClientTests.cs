@@ -2,15 +2,13 @@
 using System.Net;
 using System.Net.Sockets;
 using Xunit;
-//using System.Linq;
-//using System.Text;
-//using System.Diagnostics;
-//using SocketMessaging.Server;
-//using System.Collections.Generic;
+
+//[assembly: CollectionBehavior(CollectionBehavior.CollectionPerAssembly)]
 
 namespace SocketMessaging.Tests.Core
 {
-	public class TcpClientTests : IDisposable
+    [Collection("Sequential")]
+    public class TcpClientTests : IDisposable
 	{
 		const int SERVER_PORT = 7783;
 		readonly Server.TcpServer server;

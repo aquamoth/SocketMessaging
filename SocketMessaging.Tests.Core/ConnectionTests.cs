@@ -11,7 +11,8 @@ using Xunit;
 
 namespace SocketMessaging.Tests.Core
 {
-	public class ConnectionTests : IDisposable
+    [Collection("Sequential")]
+    public class ConnectionTests : IDisposable
 	{
 		const int SERVER_PORT = 7783;
 		readonly Server.TcpServer server;

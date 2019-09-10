@@ -6,6 +6,7 @@ using System.Linq;
 
 namespace SocketMessaging.Tests.Core
 {
+    [Collection("Sequential")]
     public class TcpServerTests : IDisposable
     {
         const int SERVER_PORT = 7732;
