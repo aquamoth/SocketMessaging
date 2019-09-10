@@ -32,9 +32,4 @@
   <ItemGroup>
     <PackageReference Include="Doxygen" Version="1.8.9.2" />
   </ItemGroup>
-  <ItemGroup>
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Net.Http" />
-  </ItemGroup>
 </Project>

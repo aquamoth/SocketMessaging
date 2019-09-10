@@ -11,3 +11,4 @@ using System.Runtime.InteropServices;
 [assembly: Guid("825c5e25-cd64-4637-8957-4050e736a87b")]
 
 [assembly: InternalsVisibleTo("SocketMessaging.Tests")]
+[assembly: InternalsVisibleTo("SocketMessaging.Tests.Core")]
