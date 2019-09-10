@@ -1,16 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <ProjectGuid>{825C5E25-CD64-4637-8957-4050E736A87B}</ProjectGuid>
-    <TargetFramework>net451</TargetFramework>
+    <TargetFrameworks>netstandard20;net451</TargetFrameworks>
     <AssemblyTitle>SocketMessaging</AssemblyTitle>
     <Company>Trustfall AB, www.trustfall.se</Company>
     <Product>SocketMessaging</Product>
     <Description>Event-driven wrappers around System.Net.Sockets.Socket, that support different message protocols ontop of raw communication.</Description>
     <Copyright>Copyright 2016 Trustfall AB</Copyright>
     <Deterministic>false</Deterministic>
-    <Version>1.1.*</Version>
-    <AssemblyVersion>1.1.*</AssemblyVersion>
-    <FileVersion>1.1.0.0</FileVersion>
+    <Version>1.2.0</Version>
+    <AssemblyVersion>1.2.0</AssemblyVersion>
+    <FileVersion>1.2.0.0</FileVersion>
     <DocumentationFile>bin\$(Configuration)\SocketMessaging.XML</DocumentationFile>
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <BuildDependsOn>$(BuildDependsOn);AfterBuildMigrated</BuildDependsOn>
