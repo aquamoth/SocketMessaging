@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25123.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.271
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocketMessaging", "SocketMessaging\SocketMessaging.csproj", "{825C5E25-CD64-4637-8957-4050E736A87B}"
 EndProject
@@ -44,5 +44,8 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{2AF1B60C-6127-4997-B4EC-706449CD86D9} = {C72A7BD5-164D-4365-911B-45976A2E6BE1}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {434B0217-709F-48FD-8AFE-B7542DD009BD}
 	EndGlobalSection
 EndGlobal
