@@ -28,7 +28,10 @@
     <Exec Command="$(SolutionDir).nuget\nuget pack SocketMessaging.csproj -Prop Configuration=Release -OutputDirectory $(SolutionDir).nuget\" />
   </Target>
   <ItemGroup>
-    <PackageReference Include="Doxygen" Version="1.8.9.2" />
+    <PackageReference Include="Doxygen" Version="1.8.9.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>    
+    </PackageReference>
     <PackageReference Include="gitinfo" Version="2.0.20">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
