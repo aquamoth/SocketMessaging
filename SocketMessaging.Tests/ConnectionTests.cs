@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Net.Sockets;
 using System.Net;
 using System.Text;
@@ -8,11 +7,12 @@ using System.Diagnostics;
 using SocketMessaging.Server;
 using System.Collections.Generic;
 using System.Threading;
+using Xunit;
 
 namespace SocketMessaging.Tests
 {
-	[TestClass]
-	public class ConnectionTests : IDisposable
+    [Collection("Sequential")]
+    public class ConnectionTests : IDisposable
 	{
 		const int SERVER_PORT = 7783;
 		readonly Server.TcpServer server;
@@ -37,8 +37,7 @@ namespace SocketMessaging.Tests
 
 
 
-		[TestMethod]
-		[TestCategory("Connection")]
+		[Fact]
 		public void Connection_triggers_Disconnected()
 		{
 			var serverDisconnectedTriggered = false;
@@ -52,15 +51,14 @@ namespace SocketMessaging.Tests
 			client.Disconnected += (s2, e2) => clientDisconnectedTriggered = true;
 			Helpers.WaitFor(() => client.IsConnected);
 
-			Assert.IsFalse(serverDisconnectedTriggered, "Connection should not trigger disconnected event before client disconnects.");
+			Assert.False(serverDisconnectedTriggered, "Connection should not trigger disconnected event before client disconnects.");
 			client.Close();
 			Helpers.WaitFor(() => serverDisconnectedTriggered && clientDisconnectedTriggered);
-			Assert.IsTrue(serverDisconnectedTriggered, "Server Connection should trigger disconnected event when client disconnects.");
-			Assert.IsTrue(clientDisconnectedTriggered, "Client should trigger disconnected event when client disconnects.");
+			Assert.True(serverDisconnectedTriggered, "Server Connection should trigger disconnected event when client disconnects.");
+			Assert.True(clientDisconnectedTriggered, "Client should trigger disconnected event when client disconnects.");
 		}
 
-		[TestMethod]
-		[TestCategory("Connection")]
+		[Fact]
 		public void Client_can_send_packet_to_server()
 		{
 			connectClient();
@@ -81,17 +79,16 @@ namespace SocketMessaging.Tests
 			while (actualLength < expectedBuffer.Length)
 			{
 				Helpers.WaitFor(() => serverConnection.Socket.Available > 0);
-				Assert.IsTrue(serverConnection.Socket.Available > 0, "Server should receive packet.");
+				Assert.True(serverConnection.Socket.Available > 0, "Server should receive packet.");
 				var data = serverConnection.Receive();
 				buffer = buffer.Concat(data);
 				actualLength += data.Length;
 			}
 
-			CollectionAssert.AreEqual(expectedBuffer, buffer.ToArray());
+			Assert.Equal(expectedBuffer, buffer.ToArray());
 		}
 
-		[TestMethod]
-		[TestCategory("Connection")]
+		[Fact]
 		public void Server_can_send_packet_to_client()
 		{
 			connectClient();
@@ -112,17 +109,16 @@ namespace SocketMessaging.Tests
 			while (actualLength < expectedBuffer.Length)
 			{
 				Helpers.WaitFor(() => client.Socket.Available > 0);
-				Assert.IsTrue(client.Socket.Available > 0, "Client should receive packets.");
+				Assert.True(client.Socket.Available > 0, "Client should receive packets.");
 				var data = client.Receive();
 				buffer = buffer.Concat(data);
 				actualLength += data.Length;
 			}
 
-			CollectionAssert.AreEqual(expectedBuffer, buffer.ToArray());
+			Assert.Equal(expectedBuffer, buffer.ToArray());
 		}
 
-		[TestMethod]
-		[TestCategory("Connection")]
+		[Fact]
 		public void Polling_threads_are_threadsafe()
 		{
 			connectClient();
@@ -161,12 +157,12 @@ namespace SocketMessaging.Tests
 			serverReceiveThread.Join();
 
 			Trace.TraceInformation("Asserting state");
-			Assert.IsTrue(serverSendState.Buffer.Count() >= serverSendState.TargetBuffer, "Server should send a big buffer");
-			CollectionAssert.AreEqual(serverSendState.Buffer.ToArray(), clientReceiveState.Buffer.ToArray(), "Client should have received what server sent");
+			Assert.True(serverSendState.Buffer.Count() >= serverSendState.TargetBuffer, "Server should send a big buffer");
+			Assert.Equal(serverSendState.Buffer.ToArray(), clientReceiveState.Buffer.ToArray());//, "Client should have received what server sent"
 
-			Assert.IsTrue(clientSendState.Buffer.Count() >= clientSendState.TargetBuffer, "Client should send a big buffer");
-			CollectionAssert.AreEqual(clientSendState.Buffer.ToArray(), serverReceiveState.Buffer.ToArray(), "Server should have received what client sent");
-		}
+            Assert.True(clientSendState.Buffer.Count() >= clientSendState.TargetBuffer, "Client should send a big buffer");
+			Assert.Equal(clientSendState.Buffer.ToArray(), serverReceiveState.Buffer.ToArray());//, "Server should have received what client sent"
+        }
 		private void Polling_threads_are_threadsafe__Send(object o)
 		{
 			var state = o as ThreadSafeState;
@@ -183,15 +179,14 @@ namespace SocketMessaging.Tests
 		private void Polling_threads_are_threadsafe__Receive(object o)
 		{
 			var state = o as ThreadSafeState;
-			while (state.Connection.IsConnected || state.Connection.Socket.Available > 0)
+			while (state.Connection.IsConnected || state.Connection.Socket?.Available > 0)
 			{
 				var buffer = state.Connection.Receive();
 				state.Buffer = state.Buffer.Concat(buffer).ToArray().AsQueryable();
 			}
 		}
 
-		[TestMethod]
-		[TestCategory("Connection")]
+		[Fact]
 		public void Connection_triggers_receivedRaw_event()
 		{
 			Connection serverConnection = null;
@@ -204,27 +199,26 @@ namespace SocketMessaging.Tests
 			};
 			connectClient();
 
-			Assert.AreEqual(0, receiveEvents, "Connection should not trigger receive raw event before client sends something.");
+			Assert.Equal(0, receiveEvents);//, "Connection should not trigger receive raw event before client sends something."
 
-			client.Send(buffer);
+            client.Send(buffer);
 			Helpers.WaitFor(() => receiveEvents != 0);
-			Assert.AreEqual(1, receiveEvents, "Connection should trigger received raw event after first send.");
+			Assert.Equal(1, receiveEvents);//, "Connection should trigger received raw event after first send."
 
-			client.Send(buffer);
+            client.Send(buffer);
 			Helpers.WaitFor(() => receiveEvents != 1, 100);
-			Assert.AreEqual(2, receiveEvents, "Connection should trigger received raw after second send.");
+			Assert.Equal(2, receiveEvents);//, "Connection should trigger received raw after second send."
 
-			var receiveBuffer = serverConnection.Receive();
+            var receiveBuffer = serverConnection.Receive();
 			Helpers.WaitFor(() => receiveEvents != 2, 100);
-			Assert.AreEqual(2, receiveEvents, "Connection should not trigger received raw events just because buffer was read.");
+			Assert.Equal(2, receiveEvents);//, "Connection should not trigger received raw events just because buffer was read."
 
-			client.Send(buffer);
+            client.Send(buffer);
 			Helpers.WaitFor(() => receiveEvents != 2);
-			Assert.AreEqual(3, receiveEvents, "Connection should trigger received raw event after third send.");
-		}
+			Assert.Equal(3, receiveEvents);//, "Connection should trigger received raw event after third send."
+        }
 
-		[TestMethod]
-		[TestCategory("Connection")]
+		[Fact]
 		public void Can_read_raw_stream_from_connection()
 		{
 			Connection serverConnection = null;
@@ -247,10 +241,10 @@ namespace SocketMessaging.Tests
 			client.Send(buffer);
 			Helpers.WaitFor(() => connectionBufferLength >= buffer.Length);
 
-			CollectionAssert.AreEqual(buffer, connectionBuffer.ToArray(), "Connection should receive the same data the client sent.");
-		}
+			Assert.Equal(buffer, connectionBuffer.ToArray());//, "Connection should receive the same data the client sent."
+        }
 
-		[TestMethod]
+		[Fact]
 		public void Can_read_stream_after_connection_closed()
 		{
 			connectClient();
@@ -265,8 +259,8 @@ namespace SocketMessaging.Tests
 			Helpers.WaitFor(() => !client.IsConnected);
 			var receiveBuffer = client.Receive();
 
-			CollectionAssert.AreEqual(sentBuffer, receiveBuffer, "Client should receive what server sent event after a disconnect.");
-		}
+			Assert.Equal(sentBuffer, receiveBuffer);//, "Client should receive what server sent event after a disconnect."
+        }
 
 
 		private void connectClient()

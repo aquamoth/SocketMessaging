@@ -1,17 +1,14 @@
 ﻿using System;
-using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Net.Sockets;
 using System.Net;
-using System.Text;
-using System.Diagnostics;
-using SocketMessaging.Server;
-using System.Collections.Generic;
+using System.Net.Sockets;
+using Xunit;
+
+//[assembly: CollectionBehavior(CollectionBehavior.CollectionPerAssembly)]
 
 namespace SocketMessaging.Tests
 {
-	[TestClass]
-	public class TcpClientTests : IDisposable
+    [Collection("Sequential")]
+    public class TcpClientTests : IDisposable
 	{
 		const int SERVER_PORT = 7783;
 		readonly Server.TcpServer server;
@@ -32,26 +29,26 @@ namespace SocketMessaging.Tests
 				server.Stop();
 		}
 
-		[TestMethod]
-		[TestCategory("TcpClient")]
+		[Fact]
 		public void Can_connect_and_disconnect_to_running_server()
 		{
 			connectClient();
-			Assert.IsTrue(client.IsConnected, "IsConnected should be true after connection.");
+			Assert.True(client.IsConnected, "IsConnected should be true after connection.");
 			var clientPollThread = client._pollThread;
 			client.Close();
-			Assert.IsFalse(client.IsConnected, "IsConnected should be false after disconnection.");
-			Helpers.WaitFor(() => clientPollThread.ThreadState == System.Threading.ThreadState.Aborted);
-			Assert.AreEqual(System.Threading.ThreadState.Aborted, clientPollThread.ThreadState, "Polling thread stops when client disconnects");
-		}
+			Assert.False(client.IsConnected, "IsConnected should be false after disconnection.");
+			Helpers.WaitFor(() => clientPollThread.ThreadState == System.Threading.ThreadState.Stopped);
+			Assert.Equal(System.Threading.ThreadState.Stopped, clientPollThread.ThreadState);//, "Polling thread stops when client disconnects"
+        }
 
-		[TestMethod]
-		[TestCategory("TcpClient")]
-		[ExpectedException(typeof(SocketException))]
+		[Fact]
 		public void Does_not_connect_to_closed_server()
 		{
-			server.Stop();
-			connectClient();
+            Assert.ThrowsAny<SocketException>(() =>
+            {
+			    server.Stop();
+			    connectClient();
+            });
 		}
 
 
