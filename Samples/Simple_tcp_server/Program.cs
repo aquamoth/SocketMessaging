@@ -17,6 +17,9 @@ namespace Simple_tcp_server
 
             Console.WriteLine($"Tcp server started on port {_tcpServer.LocalEndpoint.Port}.");
             Console.WriteLine("Press Enter to stop server.");
+            Console.WriteLine("");
+            Console.WriteLine("Communication log:");
+            Console.WriteLine("==================");
             Console.ReadLine();
         }
 
@@ -33,6 +36,8 @@ namespace Simple_tcp_server
                 e.Connection.Send($"#{client.Id} has joined.");
                 client.Send($"#{e.Connection.Id} has joined.");
             }
+
+            Console.WriteLine($"#{e.Connection.Id} has joined.");
         }
 
         private static void Connection_Disconnected(object sender, EventArgs e)
@@ -43,6 +48,8 @@ namespace Simple_tcp_server
             {
                 client.Send($"#{disconnectedClient.Id} has left.");
             }
+
+            Console.WriteLine($"#{disconnectedClient.Id} has left.");
         }
 
         private static void Connection_ReceivedMessage(object sender, EventArgs e)
@@ -55,6 +62,8 @@ namespace Simple_tcp_server
             {
                 client.Send($"#{connection.Id}: {message}");
             }
+
+            Console.WriteLine($"#{connection.Id}: {message}");
         }
 
 
