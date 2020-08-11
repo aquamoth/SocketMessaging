@@ -85,27 +85,30 @@ namespace SocketMessaging.Tests
         {
             var serverAddress = new IPAddress(new byte[] { 127, 0, 0, 1 });
 
-            Assert.Equal(0, server.Connections.Count());//, "No clients before first connection"
+            Assert.Empty(server.Connections);//, "No clients before first connection"
 
             var client1 = TcpClient.Connect(serverAddress, SERVER_PORT);
             Helpers.WaitFor(() => server.Connections.Any());
-            Assert.Equal(1, server.Connections.Count());//, "One client connected"
-            Assert.Equal(1, server.Connections.First().Id);//, "Connection Id"
+            Assert.Collection(server.Connections, 
+                connection => Assert.Equal(1, connection.Id)    //, "First Connection Id"
+            );
 
             var client2 = TcpClient.Connect(serverAddress, SERVER_PORT);
             Helpers.WaitFor(() => server.Connections.Count() >= 2);
-            Assert.Equal(2, server.Connections.Count());//, "Two clients connected"
-            Assert.Equal(1, server.Connections.First().Id);//, "Connection Id"
-            Assert.Equal(2, server.Connections.Skip(1).First().Id);//, "Connection Id"
+            Assert.Collection(server.Connections,
+                connection => Assert.Equal(1, connection.Id),//, "First Connection Id"
+                connection => Assert.Equal(2, connection.Id)//, "Second Connection Id"
+            );
 
             client1.Close();
             Helpers.WaitFor(() => server.Connections.Count() != 2);
-            Assert.Equal(1, server.Connections.Count());//, "One client disconnected"
-            Assert.Equal(2, server.Connections.First().Id);//, "Connection Id"
+            Assert.Collection(server.Connections,
+                connection => Assert.Equal(2, connection.Id)    //, "Second Connection Id"
+            );
 
             client2.Close();
             Helpers.WaitFor(() => !server.Connections.Any());
-            Assert.Equal(0, server.Connections.Count());//, "All clients disconnected"
+            Assert.Empty(server.Connections);//, "All clients disconnected"
         }
     }
 }
